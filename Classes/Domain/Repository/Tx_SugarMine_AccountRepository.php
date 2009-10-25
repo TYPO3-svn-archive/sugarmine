@@ -23,9 +23,15 @@ require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/nusoap/lib/nu
 class Tx_SugarMine_AccountRepository {
 	
 	/**
+	 * 
+	 * @var bool
+	 */
+	public $authentication = false;
+	
+	/**
 	 * @var string
 	 */
-	public $soapUrl = '';
+	public $soapUrl;
 	
 	/**
 	 * @var Tx_SugarMine_SetupRepository
@@ -36,7 +42,7 @@ class Tx_SugarMine_AccountRepository {
 	 * 
 	 * @var unknown_type
 	 */
-	public $client;
+	private $client;
 	
 	/**
 	 * @var string
@@ -59,6 +65,12 @@ class Tx_SugarMine_AccountRepository {
 	 * 
 	 * @var string
 	 */
+	private $passwordField;
+	
+	/**
+	 * 
+	 * @var string
+	 */
 	private $user;
 	
 	/**
@@ -73,6 +85,7 @@ class Tx_SugarMine_AccountRepository {
 	private $auth_array;
 	
 	/**
+	 * Instantiates nusoapclient and loads sugar statics.
 	 * 
 	 * @param Tx_SugarMine_SetupRepository $setup
 	 * @return void
@@ -84,7 +97,7 @@ class Tx_SugarMine_AccountRepository {
 		$this->soapUrl = $url.'/'.'soap.php';
 		$this->user = trim($this->setup->getValue('sugar.user'));
 		$this->password = trim($this->setup->getValue('sugar.password'));
-		
+		$this->passwordField = trim($this->setup->getValue('sugar.passwordField'));
 		//$client = new soapclientw('http://www.nonplus.net/geek/samples/books.php?wsdl', true);
 		$this->client = new soapclientw($this->soapUrl.'?wsdl',true,'','','','');  
 		// Check for any errors from the remote service
@@ -98,12 +111,16 @@ class Tx_SugarMine_AccountRepository {
 	}
 	
 	/**
-	 * SugarCE login
+	 * Define an SugarCE-user and login or auto-load by static-user.
 	 * 
+	 * @param string $user
+	 * @param string $pass
 	 * @return void
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
-	public function setLogin() {
+	public function setLogin($user=null,$pass=null) {
+		$this->user = (empty($user)) ? $this->user : $user;
+		$this->password = (empty($pass)) ? $this->password : $pass;
 		$this->auth_array = array(
    			'user_auth' => array(
      		'user_name' => $this->user,
@@ -111,27 +128,47 @@ class Tx_SugarMine_AccountRepository {
    			));
 
   		$login_results = $this->client->call('login',$this->auth_array);
-  		$this->session_id =  $login_results['id'];
+  		$this->session_id = $login_results['id'];
 	}
 	
 	/**
-	 * Get an user guid
-	 * 
-	 * @return string
+	 * Authenticates the SugarMine logon by Password from SugarCRM-Database.
+	 *   
+	 * @param string $firstName
+	 * @param string $lastName
+	 * @param string $password
+	 * @param string $module
+	 * @return bool
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
-	public function getUserGuid() {
-		$this->setLogin();
-		
-		$user_guid = $this->client->call('get_user_id',$this->session_id); 
-  		return "\n".$this->auth_array['user_auth']['user_name'].' has a GUID of '  . $user_guid . "\n\n";
+	public function getAuth($firstName=null,$lastName=null,$password=null,$module=null) {
+		if(trim($firstName)=='' OR trim($lastName)=='' OR trim($password)=='') return false;
+		##at least one predefined listed field of $matches['entry_list'] is necessary:
+		$fields = array('id','first_name', 'last_name');
+		##SQL-Like-Query: module(table).field
+		$query = $module.'.first_name="'.$firstName.'" AND '.$module.'.last_name="'.$lastName.'" AND '.$module.'_cstm.'.$this->passwordField.'="'.$password.'"';
+		$matches = $this->getEntryList($module,$query,'',0,$fields,0,0);
+		##simple result evaluation:
+		if(!empty($matches)) {
+			##more than one match should be impossible if passwords are unique:
+			if(count($matches['entry_list']) > 0) {
+				//var_dump('Sry, there are strangely too many matches:<br />'.$matches);
+				return false;
+			}
+			elseif(count($matches[entry_list]) == 0) 
+				return $this->authentication = true;
+		}
+		else {
+		//var_dump('No matching '.$module.' found');
+		return false;
+		}
 	}
 	
 	/**
-	 * Get your entry list
+	 * Get your predefined entry list.
 	 * 
 	 * @param string $module
-	 * @param string $where
+	 * @param string $query
 	 * @param string $order_bye
 	 * @param int $offset
 	 * @param array $fields
@@ -141,9 +178,8 @@ class Tx_SugarMine_AccountRepository {
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function getEntryList($module,$where='',$order_by='',$offset=0,array $fields,$max_results=0,$deleted=0) {
-		$this->setLogin();
 		
-		return $this->client->call('get_entry_list',
+		$result = $this->client->call('get_entry_list',
         array(
         $this->session_id,
         $module,
@@ -154,31 +190,80 @@ class Tx_SugarMine_AccountRepository {
         $max_results,
         $deleted
     	));
+    	
+    	if($result['result_count']>0) { 
+    		$i=0;
+    		foreach($result['entry_list'] as $record) {
+        		$i++;
+    			$array[$i-1]= $this->nameValuePairToSimpleArray($record['name_value_list']);              
+    		}
+    			return $array;
+    	}
 	}
 	
 	/**
-	 * Get an array-list of all available SugarCE-modules
+	 * Fetch name-value-pairs to more readable array.
+	 * 
+	 * @param $array
+	 * @return array
+	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 */
+	
+	private function nameValuePairToSimpleArray($array){
+    $my_array=array();
+    while(list($name,$value)=each($array)){
+        $my_array[$value['name']]=$value['value'];
+    }
+    return $my_array;
+	} 
+	
+	/**
+	 * Get an array-list of all available SugarCE-modules.
 	 * 
 	 * @return array
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function getAvailableModules() {
-		$this->setLogin();
 		
 		return $this->client->call('get_available_modules',$this->session_id);
 	}
 	
 	/**
-	 * Get all fields of your module 
+	 * Get all fields of your module.
 	 * 
 	 * @param string $module
 	 * @return array
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function getModuleFields($module) {
-		$this->setLogin();
 		
 		return $this->client->call('get_module_fields',array($this->session_id,$module));
+	}
+	
+	/**
+	 * Logout and kill current session.
+	 * 
+	 * @return void
+	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function setLogout() {
+		
+		$this->client->call('logout',$this->session_id);
+		$this->auth_array = null;
+		$this->session_id = null;
+		$this->authentication = false;
+	}
+	
+	/**
+	 * Get an user GUID-number.
+	 * 
+	 * @return string
+	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getUserGuid() {
+		
+		$user_guid = $this->client->call('get_user_id',$this->session_id); 
+  		return "\n".$this->auth_array['user_auth']['user_name'].' has a GUID of '  . $user_guid . "\n\n";
 	}
 	
 	
