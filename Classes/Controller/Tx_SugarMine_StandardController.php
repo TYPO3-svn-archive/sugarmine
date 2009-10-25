@@ -8,15 +8,10 @@ class Tx_SugarMine_StandardController extends Tx_SugarMine_ActionController
 	protected $setupRepository;
 	
 	/**
-	 * @var Tx_SugarMine_SugarRepository
-	 */
-	protected $sugarRepository;
-	
-	/**
 	 * 
-	 * @var Tx_SugarMine_AccountRepository
+	 * @var Tx_SugarMine_SugarsoapRepository
 	 */
-	protected $accountRepository;
+	protected $sugarsoapRepository;
 	
 	public function init() {
 		//$this->view->setNoRender(true);
@@ -33,9 +28,9 @@ class Tx_SugarMine_StandardController extends Tx_SugarMine_ActionController
 	 */
 	public function authAction() {
 		
-		$this->accountRepository->setLogin();
-		var_dump($this->accountRepository->getAuth('sandy','lemen','dubidu','Contacts'));
-		$this->accountRepository->setLogout();
+		$this->sugarsoapRepository->setLogin();
+		var_dump($this->sugarsoapRepository->getAuth('sandy','lemen','dubidu','Contacts'));
+		$this->sugarsoapRepository->setLogout();
 	
 	}
 	

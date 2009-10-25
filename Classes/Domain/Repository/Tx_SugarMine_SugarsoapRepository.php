@@ -14,13 +14,13 @@
 //define('sugarEntry', TRUE); 
 require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/nusoap/lib/nusoap.php');
 /**
- * Contains the account data for sugarmine
+ * Contains soap-services to get data from an external sugarCRM database.
  *
  * @package TYPO3
  * @subpackage SugarMine
  * @version 
  */
-class Tx_SugarMine_AccountRepository {
+class Tx_SugarMine_SugarsoapRepository {
 	
 	/**
 	 * 
