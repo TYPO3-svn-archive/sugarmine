@@ -4,7 +4,6 @@ if (!defined ('TYPO3_MODE')) {
 }
 //t3lib_extMgm::addStaticFile($_EXTKEY, 'Configuration/Components/', 'Components');
 //t3lib_extMgm::addStaticFile($_EXTKEY, 'Configuration/Settings/', 'Settings');
-//t3lib_extMgm::addPlugin(array('SugarMine', $_EXTKEY), 'list_type');
 
 t3lib_extMgm::addPItoST43('sugarmine');
 

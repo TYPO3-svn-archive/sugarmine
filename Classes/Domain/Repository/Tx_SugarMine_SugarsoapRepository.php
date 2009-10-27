@@ -85,6 +85,12 @@ class Tx_SugarMine_SugarsoapRepository {
 	private $auth_array;
 	
 	/**
+	 * 
+	 * @var string
+	 */
+	private $contactID;
+	
+	/**
 	 * Instantiates nusoapclient and loads sugar statics.
 	 * 
 	 * @param Tx_SugarMine_SetupRepository $setup
@@ -92,6 +98,7 @@ class Tx_SugarMine_SugarsoapRepository {
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function __construct(Tx_SugarMine_SetupRepository $setup) {
+		
 		$this->setup = $setup;
 		$url = trim($this->setup->getValue('sugar.url'), '/');
 		$this->soapUrl = $url.'/'.'soap.php';
@@ -111,7 +118,7 @@ class Tx_SugarMine_SugarsoapRepository {
 	}
 	
 	/**
-	 * Define an SugarCE-user and login or auto-load by static-user.
+	 * Define a SugarCE-user and login or auto-load by static-user.
 	 * 
 	 * @param string $user
 	 * @param string $pass
@@ -119,6 +126,7 @@ class Tx_SugarMine_SugarsoapRepository {
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function setLogin($user=null,$pass=null) {
+		
 		$this->user = (empty($user)) ? $this->user : $user;
 		$this->password = (empty($pass)) ? $this->password : $pass;
 		$this->auth_array = array(
@@ -142,6 +150,7 @@ class Tx_SugarMine_SugarsoapRepository {
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function getAuth($firstName=null,$lastName=null,$password=null,$module=null) {
+		
 		if(trim($firstName)=='' OR trim($lastName)=='' OR trim($password)=='') return false;
 		##at least one predefined listed field of $matches['entry_list'] is necessary:
 		$fields = array('id','first_name', 'last_name');
@@ -151,12 +160,14 @@ class Tx_SugarMine_SugarsoapRepository {
 		##simple result evaluation:
 		if(!empty($matches)) {
 			##more than one match should be impossible if passwords are unique:
-			if(count($matches['entry_list']) > 0) {
-				//var_dump('Sry, there are strangely too many matches:<br />'.$matches);
+			if(count($matches)-1 > 0 OR count($matches)-1 < 0) {
+				//var_dump('Sry, there is strangely no unique match:<br />'.$matches);
 				return false;
 			}
-			elseif(count($matches[entry_list]) == 0) 
+			elseif(count($matches)-1 == 0) { 
+				$this->contactID = $matches[0]['id'];
 				return $this->authentication = true;
+			}
 		}
 		else {
 		//var_dump('No matching '.$module.' found');
@@ -208,13 +219,13 @@ class Tx_SugarMine_SugarsoapRepository {
 	 * @return array
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
-	
 	private function nameValuePairToSimpleArray($array){
-    $my_array=array();
-    while(list($name,$value)=each($array)){
-        $my_array[$value['name']]=$value['value'];
-    }
-    return $my_array;
+    
+		$my_array=array();
+    	while(list($name,$value)=each($array)){
+        	$my_array[$value['name']]=$value['value'];
+    	}
+    	return $my_array;
 	} 
 	
 	/**
@@ -241,7 +252,7 @@ class Tx_SugarMine_SugarsoapRepository {
 	}
 	
 	/**
-	 * Logout and kill current session.
+	 * Logout and kill current session-data.
 	 * 
 	 * @return void
 	 * @author Sebastian Stein <s.stein@netzelf.de>
@@ -252,6 +263,7 @@ class Tx_SugarMine_SugarsoapRepository {
 		$this->auth_array = null;
 		$this->session_id = null;
 		$this->authentication = false;
+		$this->contactID = null;
 	}
 	
 	/**
@@ -264,6 +276,39 @@ class Tx_SugarMine_SugarsoapRepository {
 		
 		$user_guid = $this->client->call('get_user_id',$this->session_id); 
   		return "\n".$this->auth_array['user_auth']['user_name'].' has a GUID of '  . $user_guid . "\n\n";
+	}
+	
+	/**
+	 * Get Relationships of an authorized SugarCRM-contact.
+	 * 
+	 * @return array
+	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getContactRelationships() {
+		
+		if($this->authentication == true AND $this->contactID != '') {
+			return $this->client->call('get_contact_relationships',array($this->user,$this->password,$this->contactID));
+		}	else /*var_dump('Sry, there is no authorisation available')*/;
+	}
+	
+	/**
+	 * Get an unique sugar-contact-id by firstName,lastName and addressCity (LIKE)
+	 * This Method is independent from a custom contact-password and was only made for admin-purposes!!
+	 * 
+	 * @param string $firstName
+	 * @param string $lastName
+	 * @param string $addressCity
+	 * @return array
+	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getContactIdByName($firstName,$lastName,$addressCity) {
+		
+		$module = 'Contacts'; $fields = array('id');
+		var_dump($query = $module.'.first_name="'.$firstName.'" AND '.$module.'.last_name="'.$lastName.'" AND '.$module.'.primary_address_city LIKE "%'.$addressCity.'%"');
+		$matches = $this->getEntryList($module,$query,'',0,$fields,0,0);
+		if(count($matches)-1 == 0) {
+			return $matches[0]['id'];
+		} else /*var_dump('Sry, there is no unique match')*/;
 	}
 	
 	
