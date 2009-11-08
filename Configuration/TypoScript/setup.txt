@@ -1,0 +1,9 @@
+ # Plugin configuration
+plugin.tx_sugarmine {
+	sugar {
+		url = http://127.0.0.1/sugarce
+		user = admin
+		password = sugar
+		passwordField = password_c
+		}
+}
