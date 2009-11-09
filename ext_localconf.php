@@ -7,16 +7,35 @@ if (!defined ('TYPO3_MODE')) 	die ('Access denied.');
  * the user input (default settings, FlexForm, URL etc.)
  */
 Tx_Extbase_Utility_Extension::configurePlugin(
-	$_EXTKEY,																		// The extension name (in UpperCamelCase) or the extension key (in lower_underscore)
-	'Pi1',																			// A unique name of the plugin in UpperCamelCase
-	array(																			// An array holding the controller-action-combinations that are accessible 
-		'Standard' => 'index,soap,test',													// The first controller and its first action will be the default 
+	$_EXTKEY,											// The extension name (in UpperCamelCase) or the extension key (in lower_underscore)
+	'Pi1',												// A unique name of the plugin in UpperCamelCase
+	array(												// An array holding the controller-action-combinations that are accessible 
+		'Standard' => 'index,soap,test',				// The first controller and its first action will be the default 
 		'Service' => 'index,auth,test',
 		),
-	array(																			// An array of non-cachable controller-action-combinations (they must already be enabled)
+	array(												// An array of non-cachable controller-action-combinations (they must already be enabled)
 		'Standard' => 'index,soap,test',
 		'Service' => 'index','auth','test',
 		)
 );
 
+t3lib_extMgm::addService($_EXTKEY,  'sugar' /* sv type */,  'tx_sugarmine_sv1' /* sv key */,
+		array(
+
+			'title' => 'SugarMine-Authentication',
+			'description' => 'Authenticates SugarMine-Users',
+
+			'subtype' => '',
+
+			'available' => TRUE,
+			'priority' => 50,
+			'quality' => 50,
+
+			'os' => '',
+			'exec' => '',
+
+			'classFile' => t3lib_extMgm::extPath($_EXTKEY).'sv1/class.tx_sugarmine_sv1.php',
+			'className' => 'tx_sugarmine_sv1',
+		)
+	);
 ?>

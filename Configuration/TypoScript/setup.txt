@@ -5,5 +5,6 @@ plugin.tx_sugarmine {
 		user = admin
 		password = sugar
 		passwordField = password_c
+		passwordKey = cedebcbe-5716-4375-7549-4af87afbc989
 		}
 }

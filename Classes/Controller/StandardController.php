@@ -60,16 +60,27 @@ class Tx_SugarMine_Controller_StandardController extends Tx_Extbase_MVC_Controll
 	 * @return string The rendered view
 	 */
 	public function indexAction() {
-		//$this->view->assign('blogs', $this->blogRepository->findAll());
+		
 		$this->forward('soap');
 	}
 	
 	public function soapAction() {
 		
 		$this->sugarsoapRepository->setLogin();
-		var_dump($response = $this->sugarsoapRepository->getAvailableModules());
+		var_dump($response = $this->sugarsoapRepository->getAuth('kid61@example.biz','lalala'));
+		//var_dump($response = $this->sugarsoapRepository->getModuleFields('Contacts'));
+		//var_dump($response = $this->sugarsoapRepository->getAvailableModules());
 		$this->sugarsoapRepository->setLogout();
+	}
+	
+	public function testAction() {
+				
+		if (is_object($serviceObj = t3lib_div::makeInstanceService('sugar'))) {
+		var_dump($authentication = $serviceObj->process('','',''));
+		} else var_dump('no service object');
+		/*
 		$this->view->assign('test', 'hello fluid');
+		*/
 	}
 
 }

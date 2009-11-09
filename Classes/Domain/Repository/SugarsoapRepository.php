@@ -23,6 +23,7 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/nusoap/lib/nusoap.php');
+require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/Blowfish/Blowfish.php');
 /**
  * A repository for SugarCRM-SOAP-Magic
  * 
@@ -75,6 +76,12 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 * 
 	 * @var string
 	 */
+	private $passwordKey;
+	
+	/**
+	 * 
+	 * @var string
+	 */
 	private $passwordField;
 	
 	/**
@@ -114,6 +121,7 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		$this->user = trim($this->setup->getValue('sugar.user'));
 		$this->password = trim($this->setup->getValue('sugar.password'));
 		$this->passwordField = trim($this->setup->getValue('sugar.passwordField'));
+		$this->passwordKey = trim($this->setup->getValue('sugar.passwordKey'));
 		//$client = new soapclientw('http://www.nonplus.net/geek/samples/books.php?wsdl', true);
 		$this->client = new soapclientw($this->soapUrl.'?wsdl',true,'','','','');  
 		// Check for any errors from the remote service
@@ -127,7 +135,7 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	}
 	
 	/**
-	 * Define a SugarCE-user and login or auto-load by static-user.
+	 * Define a SugarCE-user and login or auto-login by an available static-user.
 	 * 
 	 * @param string $user
 	 * @param string $pass
@@ -149,38 +157,55 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	}
 	
 	/**
-	 * Authenticates the SugarMine logon by Password from SugarCRM-Database.
+	 * Encrypts your plain text-password with blowfish-magic.
+	 * 
+	 * @return string
+	 */
+	private function blowfishEncode($password=null) {
+		
+		#prepare static blowfish-key (identical with sugarCRM-blowfish-key)
+		$key = strval($this->passwordKey);
+		
+		$BF = new Crypt_Blowfish($key);
+		$encrPass = $BF->encrypt(strval($password));
+		$encrPass = base64_encode($encrPass);
+		return $encrPass;
+	}
+	
+	/**
+	 * Authenticates the SugarMine contact-logon by custom password and email-address from your SugarCRM-database.
 	 *   
-	 * @param string $firstName
-	 * @param string $lastName
+	 * @param string $emailAddr
 	 * @param string $password
-	 * @param string $module
 	 * @return bool
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
-	public function getAuth($firstName=null,$lastName=null,$password=null,$module=null) {
+	public function getAuth($emailAddr=null,$password=null) {
 		
-		if(trim($firstName)=='' OR trim($lastName)=='' OR trim($password)=='') return false;
-		##at least one predefined listed field of $matches['entry_list'] is necessary:
-		$fields = array('id','first_name', 'last_name');
-		##SQL-Like-Query: module(table).field
-		$query = $module.'.first_name="'.$firstName.'" AND '.$module.'.last_name="'.$lastName.'" AND '.$module.'_cstm.'.$this->passwordField.'="'.$password.'"';
-		$matches = $this->getEntryList($module,$query,'',0,$fields,0,0);
-		##simple result evaluation:
-		if(!empty($matches)) {
-			##more than one match should be impossible if passwords are unique:
-			if(count($matches)-1 > 0 OR count($matches)-1 < 0) {
-				//var_dump('Sry, there is strangely no unique match:<br />'.$matches);
-				return false;
+		if(trim($emailAddr)=='' OR trim($password)=='') { 
+			return false;
+		}
+		#encode password to be able to compare it with encoded passwords in sugars database
+		$password = $this->blowfishEncode($password);
+		
+		#if there is a matching password, there will be an user id field-value in your custom table ..
+		$passQuery = 'contacts_cstm.'.$this->passwordField.'="'.$password.'"';
+		$matches = $this->getEntryList('Contacts',$passQuery,'',0,$fields=array(),0,0);
+		$contactId = $matches[0]['id']; 
+		if(!empty($contactId)) {
+			
+			#with that user-id you can get your unique contact data and compare the email addresses
+			$mailQuery = 'contacts.id="'.$contactId.'"';
+			$matches = $this->getEntryList('Contacts',$mailQuery,'',0,$fields=array(),0,0);
+			if($matches[0]['email1'] == $emailAddr OR $matches[0]['email2'] == $emailAddr) {
+				return array(true,$matches[0]['first_name'],$matches[0]['last_name']);
 			}
-			elseif(count($matches)-1 == 0) { 
-				$this->contactID = $matches[0]['id'];
-				return $this->authentication = true;
+			else {
+				return false;
 			}
 		}
 		else {
-		//var_dump('No matching '.$module.' found');
-		return false;
+			return false;
 		}
 	}
 	
@@ -197,7 +222,7 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 * @return array
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
-	public function getEntryList($module,$where='',$order_by='',$offset=0,array $fields,$max_results=0,$deleted=0) {
+	private function getEntryList($module,$where='',$order_by='',$offset=0,array $fields,$max_results=0,$deleted=0) {
 		
 		$result = $this->client->call('get_entry_list',
         array(
@@ -210,14 +235,13 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
         $max_results,
         $deleted
     	));
-    	
     	if($result['result_count']>0) { 
     		$i=0;
     		foreach($result['entry_list'] as $record) {
         		$i++;
     			$array[$i-1]= $this->nameValuePairToSimpleArray($record['name_value_list']);              
     		}
-    			return $array;
+    		return $array;
     	}
 	}
 	
@@ -297,7 +321,9 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		
 		if($this->authentication == true AND $this->contactID != '') {
 			return $this->client->call('get_contact_relationships',array($this->user,$this->password,$this->contactID));
-		}	else /*var_dump('Sry, there is no authorisation available')*/;
+		} else {
+			/*var_dump('Sry, there is no authorisation available')*/;
+		}
 	}
 	
 	/**
@@ -317,7 +343,9 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		$matches = $this->getEntryList($module,$query,'',0,$fields,0,0);
 		if(count($matches)-1 == 0) {
 			return $matches[0]['id'];
-		} else /*var_dump('Sry, there is no unique match')*/;
+		} else {
+			/*var_dump('Sry, there is no unique match')*/;
+		}
 	}
 	
 	
