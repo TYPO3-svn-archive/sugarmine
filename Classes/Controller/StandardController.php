@@ -64,8 +64,17 @@ class Tx_SugarMine_Controller_StandardController extends Tx_Extbase_MVC_Controll
 		$this->forward('soap');
 	}
 	
-	public function soapAction() {
+	public function loginAction() {
 		
+		$this->view->assign('form','Anmeldeformular:');
+	}
+	
+	public function authAction() {
+		
+	}
+	
+	protected function soapAction() {
+		//tests:
 		$this->sugarsoapRepository->setLogin();
 		var_dump($response = $this->sugarsoapRepository->getAuth('kid61@example.biz','lalala'));
 		//var_dump($response = $this->sugarsoapRepository->getModuleFields('Contacts'));
@@ -73,14 +82,10 @@ class Tx_SugarMine_Controller_StandardController extends Tx_Extbase_MVC_Controll
 		$this->sugarsoapRepository->setLogout();
 	}
 	
-	public function testAction() {
+	protected function testAction() {
 				
-		if (is_object($serviceObj = t3lib_div::makeInstanceService('sugar'))) {
-		var_dump($authentication = $serviceObj->process('','',''));
-		} else var_dump('no service object');
-		/*
 		$this->view->assign('test', 'hello fluid');
-		*/
+		
 	}
 
 }

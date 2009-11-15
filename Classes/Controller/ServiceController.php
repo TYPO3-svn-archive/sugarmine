@@ -29,6 +29,11 @@
 class Tx_SugarMine_Controller_ServiceController extends Tx_Extbase_MVC_Controller_ActionController {
 
 	/**
+	 * @var bool
+	 */
+	public $authResult = false;
+	
+	/**
 	 * @var Tx_SugarMine_Domain_Repository_SugarsoapRepository
 	 */
 	protected $sugarsoapRepository;
@@ -55,13 +60,23 @@ class Tx_SugarMine_Controller_ServiceController extends Tx_Extbase_MVC_Controlle
 	}
 	
 /**
-	 * Index action for this controller.
+	 * Sugar-user-authentication action for the ServiceController.
 	 *
-	 * @return string The rendered view
+	 *@param eMail string
+	 *@param $passw string
+	 *@return void
 	 */
-	public function indexAction() {
-		//$this->view->assign('blogs', $this->blogRepository->findAll());
-		var_dump('hello extbase service controller!');
+	public function authAction($email,$pass) {
+		
+		$this->sugarsoapRepository->setLogin();
+		$response = $this->sugarsoapRepository->getAuth($email,$pass);
+		$this->sugarsoapRepository->setLogout();
+		
+		if($response == true) {
+			$this->authResult = true;
+		} else {
+			$this->authResult = false;
+		}
 	}
 }
 

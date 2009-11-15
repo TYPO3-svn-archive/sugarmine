@@ -22,32 +22,34 @@
 *
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
+
+require_once(t3lib_extMgm::extPath('sugarmine').'Classes/Domain/Repository/SetupRepository.php');
 require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/nusoap/lib/nusoap.php');
 require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/Blowfish/Blowfish.php');
+
 /**
- * A repository for SugarCRM-SOAP-Magic
+ * A repository for SugarCRM-NuSOAP-Magic.
  * 
  * @package TYPO3
  * @subpackage SugarMine
- * @version 
+ * @author	Sebastian Stein <s.stein@netzelf.de>
  */
 class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Persistence_Repository {
 	
 	/**
-	 * 
-	 * @var bool
+	 * @var	bool
 	 */
 	public $authentication = false;
 	
 	/**
-	 * @var string
+	 * @var	string
 	 */
 	public $soapUrl;
 	
 	/**
 	 * @var Tx_Sugarmine_Domain_Repository_SetupRepository
 	 */
-	private $setup;
+	public $setup;
 
 	/**
 	 * 
@@ -110,37 +112,69 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	/**
 	 * Instantiates nusoapclient and loads sugar statics.
 	 * 
-	 * @param Tx_SugarMine_SetupRepository $setup
-	 * @return void
-	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 * @param	Tx_SugarMine_SetupRepository	$setup
+	 * 
+	 * @return	void
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function __construct() {
-		$this->setup = new Tx_Sugarmine_Domain_Repository_SetupRepository;
-		$url = trim($this->setup->getValue('sugar.url'), '/');
-		$this->soapUrl = $url.'/'.'soap.php';
-		$this->user = trim($this->setup->getValue('sugar.user'));
-		$this->password = trim($this->setup->getValue('sugar.password'));
-		$this->passwordField = trim($this->setup->getValue('sugar.passwordField'));
-		$this->passwordKey = trim($this->setup->getValue('sugar.passwordKey'));
-		//$client = new soapclientw('http://www.nonplus.net/geek/samples/books.php?wsdl', true);
-		$this->client = new soapclientw($this->soapUrl.'?wsdl',true,'','','','');  
-		// Check for any errors from the remote service
-		$err = $this->client->getError();
-		if (!$err && $this->client !== NULL) {
-    		//var_dump($this->client);
-		} else {
-			$this->error = '<p><b>Error: ' . $err . '</b></p>';
-			var_dump($this->error);
+		
+			if (is_object($this->setup = new Tx_Sugarmine_Domain_Repository_SetupRepository)); {
+				$url = trim($this->setup->getValue('sugar.url'), '/');
+				$this->soapUrl = $url.'/'.'soap.php';
+				$this->user = trim($this->setup->getValue('sugar.user'));
+				$this->password = trim($this->setup->getValue('sugar.password'));
+				$this->passwordField = trim($this->setup->getValue('sugar.passwordField'));
+				$this->passwordKey = trim($this->setup->getValue('sugar.passwordKey'));
+				//$client = new soapclientw('http://www.nonplus.net/geek/samples/books.php?wsdl', true);
+					if(!empty($this->soapUrl) && !empty($this->user) && !empty($this->password) && !empty($this->passwordField) && !empty($this->passwordKey)) {
+						$this->client = new soapclientw($this->soapUrl.'?wsdl',true,'','','','');  
+						// Check for any errors from the remote service
+						$err = $this->client->getError();
+						if (!$err && $this->client !== NULL) {
+    						//var_dump($this->client);
+						} else {
+							$this->error = '<p><b>Error: ' . $err . '</b></p>';
+							var_dump($this->error);
+						}
+					}
+			}
+			
+	}
+	
+	/**
+	 * Init and call your soapclient without any static-data!
+	 *
+	 * @param	string	$soapUrl
+	 * @param	string	$user
+	 * @param	string	$password
+	 * @param	string	$passwordField
+	 * @param	string	$passwordKey
+	 * 
+	 * @return	void
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function callClient($soapUrl,$user,$password,$passwordField,$passwordKey) {
+		
+		if(!empty($soapUrl) && !empty($user) && !empty($password) && !empty($passwordField) && !empty($passwordKey)) {
+		$this->soapUrl = $soapUrl;
+		$this->user = $user;
+		$this->password = $password;
+		$this->passwordField = $passwordField;
+		$this->passwordKey = $passwordKey;
+		
+		$this->client = new soapclientw($this->soapUrl.'/soap.php?wsdl',true,'','','','');
 		}
 	}
 	
 	/**
 	 * Define a SugarCE-user and login or auto-login by an available static-user.
 	 * 
-	 * @param string $user
-	 * @param string $pass
-	 * @return void
-	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 * @param	string	$user
+	 * @param	string	$pass
+	 * 
+	 * @return	void
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function setLogin($user=null,$pass=null) {
 		
@@ -159,7 +193,10 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	/**
 	 * Encrypts your plain text-password with blowfish-magic.
 	 * 
-	 * @return string
+	 * @param	string	$password (plain-text)
+	 * 
+	 * @return	string
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	private function blowfishEncode($password=null) {
 		
@@ -173,19 +210,20 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	}
 	
 	/**
-	 * Authenticates the SugarMine contact-logon by custom password and email-address from your SugarCRM-database.
+	 * Authenticates the SugarMine contact-logon by custom blowfish-password and email-address from your SugarCRM-database.
 	 *   
-	 * @param string $emailAddr
-	 * @param string $password
-	 * @return bool
-	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 * @param	string	$emailAddr
+	 * @param	string	$password
+	 * 
+	 * @return	bool
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function getAuth($emailAddr=null,$password=null) {
 		
 		if(trim($emailAddr)=='' OR trim($password)=='') { 
 			return false;
 		}
-		#encode password to be able to compare it with encoded passwords in sugars database
+		#encode password to be able to detect it in sugars database:
 		$password = $this->blowfishEncode($password);
 		
 		#if there is a matching password, there will be an user id field-value in your custom table ..
@@ -193,10 +231,11 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		$matches = $this->getEntryList('Contacts',$passQuery,'',0,$fields=array(),0,0);
 		$contactId = $matches[0]['id']; 
 		if(!empty($contactId)) {
-			
+			$this->contactID = $contactId;
 			#with that user-id you can get your unique contact data and compare the email addresses
 			$mailQuery = 'contacts.id="'.$contactId.'"';
 			$matches = $this->getEntryList('Contacts',$mailQuery,'',0,$fields=array(),0,0);
+			#delete the second or-condition, if only the primary email address should be valid:
 			if($matches[0]['email1'] == $emailAddr OR $matches[0]['email2'] == $emailAddr) {
 				return array(true,$matches[0]['first_name'],$matches[0]['last_name']);
 			}
@@ -212,15 +251,16 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	/**
 	 * Get your predefined entry list.
 	 * 
-	 * @param string $module
-	 * @param string $query
-	 * @param string $order_bye
-	 * @param int $offset
-	 * @param array $fields
-	 * @param int $max_results
-	 * @param int $deleted
-	 * @return array
-	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 * @param	string	$module
+	 * @param	string	$query
+	 * @param 	string	$order_bye
+	 * @param 	int		$offset
+	 * @param 	array	$fields
+	 * @param 	int		$max_results
+	 * @param 	int		$deleted
+	 * 
+	 * @return 	array
+	 * @author 	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	private function getEntryList($module,$where='',$order_by='',$offset=0,array $fields,$max_results=0,$deleted=0) {
 		
@@ -235,6 +275,7 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
         $max_results,
         $deleted
     	));
+    	#if there is a valid result, return entry_list-array, else dump error
     	if($result['result_count']>0) { 
     		$i=0;
     		foreach($result['entry_list'] as $record) {
@@ -242,15 +283,18 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
     			$array[$i-1]= $this->nameValuePairToSimpleArray($record['name_value_list']);              
     		}
     		return $array;
+    	} elseif($result['result_count']<0) {
+    		var_dump($result['error']);	
     	}
 	}
 	
 	/**
 	 * Fetch name-value-pairs to more readable array.
 	 * 
-	 * @param $array
-	 * @return array
-	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 * @param	$array
+	 * 
+	 * @return	array
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	private function nameValuePairToSimpleArray($array){
     
@@ -264,8 +308,8 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	/**
 	 * Get an array-list of all available SugarCE-modules.
 	 * 
-	 * @return array
-	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 * @return	array
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function getAvailableModules() {
 		
@@ -275,9 +319,10 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	/**
 	 * Get all fields of your module.
 	 * 
-	 * @param string $module
-	 * @return array
-	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 * @param	string	$module
+	 * 
+	 * @return	array
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function getModuleFields($module) {
 		
@@ -287,8 +332,8 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	/**
 	 * Logout and kill current session-data.
 	 * 
-	 * @return void
-	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 * @return	void
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function setLogout() {
 		
@@ -302,8 +347,8 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	/**
 	 * Get an user GUID-number.
 	 * 
-	 * @return string
-	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 * @return	string
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function getUserGuid() {
 		
@@ -314,8 +359,8 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	/**
 	 * Get Relationships of an authorized SugarCRM-contact.
 	 * 
-	 * @return array
-	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 * @return	array
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function getContactRelationships() {
 		
@@ -328,13 +373,14 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	
 	/**
 	 * Get an unique sugar-contact-id by firstName,lastName and addressCity (LIKE)
-	 * This Method is independent from a custom contact-password and was only made for admin-purposes!!
+	 * This Method is independent from a custom contact-password and was only made for developer-purposes!!
 	 * 
-	 * @param string $firstName
-	 * @param string $lastName
-	 * @param string $addressCity
-	 * @return array
-	 * @author Sebastian Stein <s.stein@netzelf.de>
+	 * @param	string	$firstName
+	 * @param	string	$lastName
+	 * @param	string 	$addressCity
+	 * 
+	 * @return	array
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function getContactIdByName($firstName,$lastName,$addressCity) {
 		
