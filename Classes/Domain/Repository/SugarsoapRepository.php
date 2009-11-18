@@ -36,15 +36,18 @@ require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/Blowfish/Blow
  */
 class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Persistence_Repository {
 	
-	/**
-	 * @var	bool
-	 */
-	public $authentication = false;
 	
 	/**
 	 * @var	string
 	 */
 	public $soapUrl;
+	
+	/**
+	 * Contains all available contact data from sugarCRM 
+	 * 
+	 * @var array
+	 */
+	public $contactData = null;
 	
 	/**
 	 * @var Tx_Sugarmine_Domain_Repository_SetupRepository
@@ -72,19 +75,19 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 * 
 	 * @var string
 	 */
-	private $password;
+	private $passw;
 	
 	/**
 	 * 
 	 * @var string
 	 */
-	private $passwordKey;
+	private $passwKey;
 	
 	/**
 	 * 
 	 * @var string
 	 */
-	private $passwordField;
+	private $passwField;
 	
 	/**
 	 * 
@@ -107,7 +110,7 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 * 
 	 * @var string
 	 */
-	private $contactID;
+	public $contactID; // make this PRIVATE in future!!!!
 	
 	/**
 	 * Instantiates nusoapclient and loads sugar statics.
@@ -120,15 +123,22 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	public function __construct() {
 		
 			if (is_object($this->setup = new Tx_Sugarmine_Domain_Repository_SetupRepository)); {
+				/*
 				$url = trim($this->setup->getValue('sugar.url'), '/');
 				$this->soapUrl = $url.'/'.'soap.php';
 				$this->user = trim($this->setup->getValue('sugar.user'));
 				$this->password = trim($this->setup->getValue('sugar.password'));
 				$this->passwordField = trim($this->setup->getValue('sugar.passwordField'));
 				$this->passwordKey = trim($this->setup->getValue('sugar.passwordKey'));
-				//$client = new soapclientw('http://www.nonplus.net/geek/samples/books.php?wsdl', true);
-					if(!empty($this->soapUrl) && !empty($this->user) && !empty($this->password) && !empty($this->passwordField) && !empty($this->passwordKey)) {
-						$this->client = new soapclientw($this->soapUrl.'?wsdl',true,'','','','');  
+				*/
+				$this->soapUrl = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['url'];
+				$this->user = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['user'];
+				$this->passw = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['passw'];
+				$this->passwField = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['passwField'];
+				$this->passwKey = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['passwKey'];
+				
+					if(!empty($this->soapUrl) && !empty($this->user) && !empty($this->passw) && !empty($this->passwField) && !empty($this->passwKey)) {
+						$this->client = new soapclientw($this->soapUrl.'/soap.php?wsdl',true,'','','','');  
 						// Check for any errors from the remote service
 						$err = $this->client->getError();
 						if (!$err && $this->client !== NULL) {
@@ -143,31 +153,6 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	}
 	
 	/**
-	 * Init and call your soapclient without any static-data!
-	 *
-	 * @param	string	$soapUrl
-	 * @param	string	$user
-	 * @param	string	$password
-	 * @param	string	$passwordField
-	 * @param	string	$passwordKey
-	 * 
-	 * @return	void
-	 * @author	Sebastian Stein <s.stein@netzelf.de>
-	 */
-	public function callClient($soapUrl,$user,$password,$passwordField,$passwordKey) {
-		
-		if(!empty($soapUrl) && !empty($user) && !empty($password) && !empty($passwordField) && !empty($passwordKey)) {
-		$this->soapUrl = $soapUrl;
-		$this->user = $user;
-		$this->password = $password;
-		$this->passwordField = $passwordField;
-		$this->passwordKey = $passwordKey;
-		
-		$this->client = new soapclientw($this->soapUrl.'/soap.php?wsdl',true,'','','','');
-		}
-	}
-	
-	/**
 	 * Define a SugarCE-user and login or auto-login by an available static-user.
 	 * 
 	 * @param	string	$user
@@ -179,73 +164,15 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	public function setLogin($user=null,$pass=null) {
 		
 		$this->user = (empty($user)) ? $this->user : $user;
-		$this->password = (empty($pass)) ? $this->password : $pass;
+		$this->passw = (empty($pass)) ? $this->passw : $pass;
 		$this->auth_array = array(
    			'user_auth' => array(
      		'user_name' => $this->user,
-     		'password' => md5($this->password),
+     		'password' => md5($this->passw),
    			));
 
   		$login_results = $this->client->call('login',$this->auth_array);
   		$this->session_id = $login_results['id'];
-	}
-	
-	/**
-	 * Encrypts your plain text-password with blowfish-magic.
-	 * 
-	 * @param	string	$password (plain-text)
-	 * 
-	 * @return	string
-	 * @author	Sebastian Stein <s.stein@netzelf.de>
-	 */
-	private function blowfishEncode($password=null) {
-		
-		#prepare static blowfish-key (identical with sugarCRM-blowfish-key)
-		$key = strval($this->passwordKey);
-		
-		$BF = new Crypt_Blowfish($key);
-		$encrPass = $BF->encrypt(strval($password));
-		$encrPass = base64_encode($encrPass);
-		return $encrPass;
-	}
-	
-	/**
-	 * Authenticates the SugarMine contact-logon by custom blowfish-password and email-address from your SugarCRM-database.
-	 *   
-	 * @param	string	$emailAddr
-	 * @param	string	$password
-	 * 
-	 * @return	bool
-	 * @author	Sebastian Stein <s.stein@netzelf.de>
-	 */
-	public function getAuth($emailAddr=null,$password=null) {
-		
-		if(trim($emailAddr)=='' OR trim($password)=='') { 
-			return false;
-		}
-		#encode password to be able to detect it in sugars database:
-		$password = $this->blowfishEncode($password);
-		
-		#if there is a matching password, there will be an user id field-value in your custom table ..
-		$passQuery = 'contacts_cstm.'.$this->passwordField.'="'.$password.'"';
-		$matches = $this->getEntryList('Contacts',$passQuery,'',0,$fields=array(),0,0);
-		$contactId = $matches[0]['id']; 
-		if(!empty($contactId)) {
-			$this->contactID = $contactId;
-			#with that user-id you can get your unique contact data and compare the email addresses
-			$mailQuery = 'contacts.id="'.$contactId.'"';
-			$matches = $this->getEntryList('Contacts',$mailQuery,'',0,$fields=array(),0,0);
-			#delete the second or-condition, if only the primary email address should be valid:
-			if($matches[0]['email1'] == $emailAddr OR $matches[0]['email2'] == $emailAddr) {
-				return array(true,$matches[0]['first_name'],$matches[0]['last_name']);
-			}
-			else {
-				return false;
-			}
-		}
-		else {
-			return false;
-		}
 	}
 	
 	/**
@@ -340,7 +267,6 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		$this->client->call('logout',$this->session_id);
 		$this->auth_array = null;
 		$this->session_id = null;
-		$this->authentication = false;
 		$this->contactID = null;
 	}
 	
@@ -364,7 +290,7 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 */
 	public function getContactRelationships() {
 		
-		if($this->authentication == true AND $this->contactID != '') {
+		if($this->contactID != '') {
 			return $this->client->call('get_contact_relationships',array($this->user,$this->password,$this->contactID));
 		} else {
 			/*var_dump('Sry, there is no authorisation available')*/;

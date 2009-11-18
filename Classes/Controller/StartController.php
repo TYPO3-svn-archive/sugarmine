@@ -26,8 +26,9 @@
  * The Standard controller for SugarMine.
  *
  */
-class Tx_SugarMine_Controller_StandardController extends Tx_Extbase_MVC_Controller_ActionController {
+class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_ActionController {
 
+	
 	/**
 	 * @var Tx_Sugarmine_Domain_Repository_SugarsoapRepository
 	 */
@@ -55,13 +56,20 @@ class Tx_SugarMine_Controller_StandardController extends Tx_Extbase_MVC_Controll
 	}
 
 	/**
-	 * Index action for this controller.
+	 * Index action: if there is a valid temp value, the process is forwarded to the AccountController.
 	 *
-	 * @return string The rendered view
+	 * @return void
 	 */
 	public function indexAction() {
-		
-		$this->forward('soap');
+
+		$contactData = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['temp'];
+		if($contactData !== null) {
+	 		
+			// put temporary contactData into current authorized session
+			$GLOBALS['TSFE']->fe_user->setKey('ses','contact', $contactData);
+			$GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['temp'] = null;
+			$this->forward('index','Account');
+		}
 	}
 	
 	public function loginAction() {
@@ -74,18 +82,20 @@ class Tx_SugarMine_Controller_StandardController extends Tx_Extbase_MVC_Controll
 	}
 	
 	protected function soapAction() {
-		//tests:
+
 		$this->sugarsoapRepository->setLogin();
-		var_dump($response = $this->sugarsoapRepository->getAuth('kid61@example.biz','lalala'));
+		var_dump($response = $this->sugarsoapRepository->getAuth('support68@example.info','tralla'));
 		//var_dump($response = $this->sugarsoapRepository->getModuleFields('Contacts'));
 		//var_dump($response = $this->sugarsoapRepository->getAvailableModules());
 		$this->sugarsoapRepository->setLogout();
 	}
 	
 	protected function testAction() {
-				
-		$this->view->assign('test', 'hello fluid');
 		
+		$this->sugarsoapRepository->setLogin();
+		var_dump($response = $this->sugarsoapRepository->getModuleFields('Contacts'));
+		//$this->view->assign('soap', array('user'=>'hallo'));
+		$this->sugarsoapRepository->setLogout();
 	}
 
 }

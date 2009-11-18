@@ -6,24 +6,11 @@
 	note that this example might be not fully functional at certain times
 	because we're continuously working on it and it has not yet been
 	officially released.</p>
-	<f:if condition="{blogs}">
+	<f:if condition="{soap}">
 		<f:then>
 			<p class="bodytext">Here is a list of blogs:</p>
 			<ul>
-				<f:for each="{blogs}" as="blog">
-					<li>
-						<h3>
-							<f:link.action action="index" controller="Post"	arguments="{blog : blog}">
-								{blog.title} (<f:count subject="{blog.posts}" />)
-							</f:link.action>
-						</h3>
-						<p>
-							<f:format.nl2br>{blog.description}</f:format.nl2br>
-							<f:link.action action="edit" controller="Blog" arguments="{blog : blog}">Edit</f:link.action>
-							<f:link.action action="delete" controller="Blog" arguments="{blog : blog}">Delete</f:link.action>
-						</p>
-					</li>
-				</f:for>
+				{soap.user}
 			</ul>
 			<p><f:link.action action="new">Create another blog</f:link.action></p>
 			<p><f:link.action action="populate">Create example data</f:link.action></p>
@@ -34,3 +21,4 @@
 			<p><f:link.action action="populate">Create example data</f:link.action></p>
 		</f:else>
 	</f:if>
+</f:section>

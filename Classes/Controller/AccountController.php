@@ -26,12 +26,7 @@
  * The Service controller for SugarMine-user-authentication.
  *
  */
-class Tx_SugarMine_Controller_ServiceController extends Tx_Extbase_MVC_Controller_ActionController {
-
-	/**
-	 * @var bool
-	 */
-	public $authResult = false;
+class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controller_ActionController {
 	
 	/**
 	 * @var Tx_SugarMine_Domain_Repository_SugarsoapRepository
@@ -53,30 +48,32 @@ class Tx_SugarMine_Controller_ServiceController extends Tx_Extbase_MVC_Controlle
 	 *
 	 * @return void
 	 */
-	public function initializeAction() {
+	protected function initializeAction() {
 		$this->setupRepository = t3lib_div::makeInstance('Tx_SugarMine_Domain_Repository_SetupRepository');
 		$this->sugarsoapRepository = t3lib_div::makeInstance('Tx_SugarMine_Domain_Repository_SugarsoapRepository');
-		//$this->administratorRepository = t3lib_div::makeInstance('Tx_BlogExample_Domain_Repository_AdministratorRepository');
+		$this->administratorRepository = t3lib_div::makeInstance('Tx_Sugarmine_Domain_Repository_AdministratorRepository');
 	}
 	
 /**
-	 * Sugar-user-authentication action for the ServiceController.
+	 * Index Action of AccountController.
 	 *
-	 *@param eMail string
-	 *@param $passw string
 	 *@return void
 	 */
-	public function authAction($email,$pass) {
+	protected function indexAction() {
 		
+		$this->forward('test');
+	}
+	
+	protected function testAction() {
+		
+		var_dump('hello protected account action');
 		$this->sugarsoapRepository->setLogin();
-		$response = $this->sugarsoapRepository->getAuth($email,$pass);
+		$moduleFields = $this->sugarsoapRepository->getModuleFields('Contacts');
+		var_dump($moduleFields);
 		$this->sugarsoapRepository->setLogout();
+		//$var=$GLOBALS['TSFE']->fe_user->getKey('ses','contact');
+		//var_dump($var);
 		
-		if($response == true) {
-			$this->authResult = true;
-		} else {
-			$this->authResult = false;
-		}
 	}
 }
 

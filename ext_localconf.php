@@ -8,23 +8,16 @@ if (!defined ('TYPO3_MODE')) 	die ('Access denied.');
  */
 Tx_Extbase_Utility_Extension::configurePlugin(
 	$_EXTKEY,											// The extension name (in UpperCamelCase) or the extension key (in lower_underscore)
-	'Pi1',												// A unique name of the plugin in UpperCamelCase
+	'SugarMine',												// A unique name of the plugin in UpperCamelCase
 	array(												// An array holding the controller-action-combinations that are accessible 
-		'Standard' => 'index,soap,test,auth,login',		// The first controller and its first action will be the default 
-		'Service' => 'index,soap,test,auth,login',
+		'Start' => 'index,soap,test,auth,login',		// The first controller and its first action will be the default 
+		'Account' => 'index,test,form',
 		),
 	array(												// An array of non-cachable controller-action-combinations (they must already be enabled)
-		'Standard' => 'index,soap,test,auth,login',
-		'Service' => 'index,soap,test,auth,login',
+		'Start' => 'index,soap,test,auth,login',
+		'Account' => 'index,test,form',
 		)
 );
-
-$TYPO3_CONF_VARS['SVCONF']['auth']['tx_sugarmine_sv1']['url'] = 'http://127.0.0.1/sugarce'; // site url to sugarCRM
-$TYPO3_CONF_VARS['SVCONF']['auth']['tx_sugarmine_sv1']['user'] = 'admin'; // user name of sugarCRM 
-$TYPO3_CONF_VARS['SVCONF']['auth']['tx_sugarmine_sv1']['password'] = 'sugar'; // user password of sugarCRM
-$TYPO3_CONF_VARS['SVCONF']['auth']['tx_sugarmine_sv1']['passwordField'] = 'password_c'; // custom password of sugarCRM
-$TYPO3_CONF_VARS['SVCONF']['auth']['tx_sugarmine_sv1']['passwordKey'] = 'cedebcbe-5716-4375-7549-4af87afbc989'; // cashed blowfish-key of sugarCRM
-$TYPO3_CONF_VARS['SVCONF']['auth']['tx_sugarmine_sv1']['t3DummyUserName'] = 'testpilot'; // user name of an existing TYPO3!!! fe-user
 
 $subTypes = 'authUserFE,getUserFE';
 
