@@ -53,6 +53,7 @@ class Tx_Sugarmine_Domain_Repository_SetupRepository extends Tx_Extbase_Persiste
 	 * 
 	 * @param string $path
 	 * @param string $value
+	 * 
 	 * @return void
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
@@ -68,13 +69,16 @@ class Tx_Sugarmine_Domain_Repository_SetupRepository extends Tx_Extbase_Persiste
 	 * Get a value from the setup by a path (eg. property1.property2)
 	 * 
 	 * @param string $path
+	 * @param boolean $isArray true if array is requested
 	 * @param mixed $standard The value if requested one is empty
+	 * 
 	 * @return Ambigous <$default, mixed>
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function getValue($path, $default = null) {
-		$array = $this->path2array($path);
-		$eval = '$result = $this->setup[\''.$array.'\'];';
+		$isArray = (substr($path, -1) === '.') ? true : null;
+		$array = $this->path2array($path, $isArray); 
+		$eval = '$result = $this->setup[\''.$array.'\'];'; // join into smth like this: $return=$this->setup['key'.'.']['key'.'.']['value'];
 		eval($eval);
 		return (empty($result)) ? $default : $result;
 	}
@@ -83,15 +87,18 @@ class Tx_Sugarmine_Domain_Repository_SetupRepository extends Tx_Extbase_Persiste
 	 * Parses a path to array string
 	 * 
 	 * @param string $path
+	 * @param mixed true if array is requested
+	 * 
 	 * @return string The Array
 	 * @author Sebastian Stein <s.stein@netzelf.de>
 	 */
-	private function path2array($path) {
+	private function path2array($path, $isArray = null) {
 		$path = trim($path,$this->pathDelimiter);
 		$pathArray = explode($this->pathDelimiter, $path);
 		$path = implode("'.'.']['", $pathArray);
 		
-		$dot = (is_array($value)) ? '.' : '';
+		//$dot = (is_array($value)) ? '.' : '';
+		$dot = ($isArray === true) ? "'.'." : '';
 		return $path.$dot;
 	}
 	

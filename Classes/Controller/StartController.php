@@ -63,10 +63,10 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	public function indexAction() {
 
 		$contactData = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['temp'];
-		if($contactData !== null) {
+		if($contactData['auth'] === true) {
 	 		
 			// put temporary contactData into current authorized session
-			$GLOBALS['TSFE']->fe_user->setKey('ses','contact', $contactData);
+			$GLOBALS['TSFE']->fe_user->setKey('ses','authorizedUser', $contactData);
 			$GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['temp'] = null;
 			$this->forward('index','Account');
 		}
@@ -82,20 +82,22 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	}
 	
 	protected function soapAction() {
-
+	/*
 		$this->sugarsoapRepository->setLogin();
 		var_dump($response = $this->sugarsoapRepository->getAuth('support68@example.info','tralla'));
 		//var_dump($response = $this->sugarsoapRepository->getModuleFields('Contacts'));
 		//var_dump($response = $this->sugarsoapRepository->getAvailableModules());
 		$this->sugarsoapRepository->setLogout();
+	*/
 	}
 	
 	protected function testAction() {
-		
+	/*
 		$this->sugarsoapRepository->setLogin();
 		var_dump($response = $this->sugarsoapRepository->getModuleFields('Contacts'));
 		//$this->view->assign('soap', array('user'=>'hallo'));
 		$this->sugarsoapRepository->setLogout();
+	*/
 	}
 
 }

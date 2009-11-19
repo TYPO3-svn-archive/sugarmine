@@ -113,6 +113,13 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	public $contactID; // make this PRIVATE in future!!!!
 	
 	/**
+	 * Defined by Configuration/TypoScript/setup.txt: Contains field-configuration of contact-data.
+	 * 
+	 * @var array
+	 */
+	public $fieldConf = '';
+	
+	/**
 	 * Instantiates nusoapclient and loads sugar statics.
 	 * 
 	 * @param	Tx_SugarMine_SetupRepository	$setup
@@ -123,21 +130,32 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	public function __construct() {
 		
 			if (is_object($this->setup = new Tx_Sugarmine_Domain_Repository_SetupRepository)); {
-				/*
-				$url = trim($this->setup->getValue('sugar.url'), '/');
-				$this->soapUrl = $url.'/'.'soap.php';
-				$this->user = trim($this->setup->getValue('sugar.user'));
-				$this->password = trim($this->setup->getValue('sugar.password'));
-				$this->passwordField = trim($this->setup->getValue('sugar.passwordField'));
-				$this->passwordKey = trim($this->setup->getValue('sugar.passwordKey'));
-				*/
+				
+				$viewField = $this->setup->getValue('sugar.viewableFields.');
+				$editField = $this->setup->getValue('sugar.editableFields.');
+				//var_dump($editField);
+				
+				foreach($viewField as $name => $value) { // value is 1 or ''
+					 
+					if ($value == 1 && $editField[$name] == '') {
+						$fieldConf[] = array('name'=>$name,'edit'=>false);
+						
+					} elseif ($value == 1 && $editField[$name] == 1) {
+						$fieldConf[] = array('name'=>$name,'edit'=>true);
+					}
+				} /*id (array)
+						name (string)
+						edit (string) */
+				
+				$this->fieldConf = $fieldConf;
+				
 				$this->soapUrl = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['url'];
 				$this->user = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['user'];
 				$this->passw = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['passw'];
 				$this->passwField = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['passwField'];
 				$this->passwKey = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['passwKey'];
-				
-					if(!empty($this->soapUrl) && !empty($this->user) && !empty($this->passw) && !empty($this->passwField) && !empty($this->passwKey)) {
+					// call soapclient if every necessary configuration is available in localconf.php:
+					if(!empty($this->soapUrl) && !empty($this->user) && !empty($this->passw) && !empty($this->passwField) && !empty($this->passwKey) && is_array($this->fieldConf)) {
 						$this->client = new soapclientw($this->soapUrl.'/soap.php?wsdl',true,'','','','');  
 						// Check for any errors from the remote service
 						$err = $this->client->getError();
@@ -147,6 +165,8 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 							$this->error = '<p><b>Error: ' . $err . '</b></p>';
 							var_dump($this->error);
 						}
+					} else {
+						exit('ERROR: Please set all necessary configurations!!!');
 					}
 			}
 			

@@ -220,6 +220,7 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 			######################### SugarCRM-REQUEST ###############################
 			$this->setLogin();
 			$result = $this->getSugarContact();
+			$this->client->call('logout',$this->session_id); // direct logout!
 			######################### /SugarCRM-REQUEST ###############################
 
 			// evaluation of sugars response:
@@ -272,15 +273,16 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
     /**
 	 * Authenticates the SugarMine contact-logon by custom blowfish-password and email-address from SugarCRM-database.
 	 * 
-	 * @return	bool
+	 * @return	mixed false or array
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	private function getSugarContact() {
-				
+
+		$SOURCE = 'Contacts'; // TODO: should be defined in localconf.php!!!!!!
+		
 		$emailAddr = trim($this->login['uname']);
 		$password = trim($this->login['uident']);
 		if($emailAddr == '' OR $password == '') { 
-			$this->client->call('logout',$this->session_id);
 			return false;
 		}
 		#encode password to be able to detect it in sugars database:
@@ -293,7 +295,7 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 		#if there is a matching password, there will be an user id field-value in your custom table ..
 		$passQuery = 'contacts_cstm.'.$this->passwField.'="'.$password.'"';
 		$matches = $this->getEntryList('Contacts',$passQuery,'',0,$fields=array(),0,0);
-		$contactId = $matches[0]['id']; 
+		$contactId = $matches[0]['id']; // pick user id
 		if(!empty($contactId)) {
 			#with that user-id you can get your unique contact data and compare the email addresses
 			$mailQuery = 'contacts.id="'.$contactId.'"';
@@ -301,16 +303,13 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 			#delete the second or-condition, if only the primary email address should be valid:
 			if($matches[0]['email1'] == $emailAddr OR $matches[0]['email2'] == $emailAddr) {
 				//var_dump($matches);
-				$this->client->call('logout',$this->session_id);
-				return array('auth'=>true,'data'=>$matches[0]);
+				return array('auth'=>true, 'source'=>$SOURCE, 'data'=>$matches[0]);
 			}
 			else {
-				$this->client->call('logout',$this->session_id);
 				return false;
 			}
 		}
 		else {
-			$this->client->call('logout',$this->session_id);
 			return false;
 		}
 	}
@@ -326,7 +325,7 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 	 * @param 	int		$max_results
 	 * @param 	int		$deleted
 	 * 
-	 * @return 	array
+	 * @return 	mixed	array or void (dumps error)
 	 * @author 	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	private function getEntryList($module,$where='',$order_by='',$offset=0,array $fields,$max_results=0,$deleted=0) {

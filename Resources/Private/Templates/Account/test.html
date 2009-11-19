@@ -1,0 +1,20 @@
+<f:section name="content">
+	<f:if condition="{test}">
+		<h3>Welcome to our Support Center {test.salutation.value} {test.first_name.value} {test.last_name.value}.</h3>
+		<f:form method="post" controller="Account" action="test" name="contactForm">
+			<f:for each="{test}" as="record">
+				<label for="textboxLabel">
+					<span>{record.field.label}</span>
+        		</label>
+				<f:if condition="{record.edit}">	
+					<f:then>	
+						<f:form.textbox name="test" value="{record.value}" />
+					</f:then>
+					<f:else>	
+						{record.value}
+					</f:else>
+				</f:if><br />
+			</f:for>
+		</f:form>
+	</f:if>
+</f:section>

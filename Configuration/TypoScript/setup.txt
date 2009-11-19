@@ -1,15 +1,30 @@
  # Plugin configuration
 plugin.tx_sugarmine {
 	sugar {
-		# site url (listed in sugars config.php) to sugarCRM:
-		url = http://127.0.0.1/sugarce
-		# user name of sugarCRM:
-		user = admin  
-		# user password of sugarCRM:
-		password = sugar
-		# custom password of sugarCRM:
-		passwordField = password_c 
-		# cashed blowfish-key of sugarCRM:
-		passwordKey = cedebcbe-5716-4375-7549-4af87afbc989 
+		viewableFields {
+			salutation = 1
+			first_name = 1
+			last_name = 1
+			title = 1
+			department = 1
+			phone_home = 1
+			phone_work = 1
+			phone_mobile = 
+			email1 = 1
+			email2 = 1
+			password_c = 1
 		}
+		editableFields {
+			first_name = 1
+			last_name = 1
+			title = 1
+			department = 1
+			phone_home = 1
+			phone_work = 1
+			phone_mobile = 
+			email1 = 1
+			email2 = 1
+			password_c =
+		}
+	}
 }
