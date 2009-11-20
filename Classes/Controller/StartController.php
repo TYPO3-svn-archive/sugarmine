@@ -37,12 +37,12 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	/**
 	 * @var Tx_Sugarmine_Domain_Repository_SetupRepository
 	 */
-	protected $setupRepository;
+	//protected $setupRepository;
 
 	/**
 	 * @var Tx_Sugarmine_Domain_Repository_AdministratorRepository
 	 */
-	protected $administratorRepository;
+	//protected $administratorRepository;
 
 	/**
 	 * Initializes the current action
@@ -50,9 +50,9 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	 * @return void
 	 */
 	public function initializeAction() {
-		$this->setupRepository = t3lib_div::makeInstance('Tx_Sugarmine_Domain_Repository_SetupRepository');
+		//$this->setupRepository = t3lib_div::makeInstance('Tx_Sugarmine_Domain_Repository_SetupRepository');
 		$this->sugarsoapRepository = t3lib_div::makeInstance('Tx_Sugarmine_Domain_Repository_SugarsoapRepository');
-		$this->administratorRepository = t3lib_div::makeInstance('Tx_Sugarmine_Domain_Repository_AdministratorRepository');
+		//$this->administratorRepository = t3lib_div::makeInstance('Tx_Sugarmine_Domain_Repository_AdministratorRepository');
 	}
 
 	/**
@@ -62,13 +62,15 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	 */
 	public function indexAction() {
 
-		$contactData = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['temp'];
+		$contactData = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['auth']['temp'];
 		if($contactData['auth'] === true) {
 	 		
 			// put temporary contactData into current authorized session
 			$GLOBALS['TSFE']->fe_user->setKey('ses','authorizedUser', $contactData);
-			$GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['temp'] = null;
+			$GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['auth']['temp'] = null;
 			$this->forward('index','Account');
+		} else {
+			$this->forward('test');
 		}
 	}
 	
@@ -78,7 +80,7 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	}
 	
 	public function authAction() {
-		
+		var_dump('hello auth action');
 	}
 	
 	protected function soapAction() {
@@ -92,12 +94,10 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	}
 	
 	protected function testAction() {
-	/*
+		var_dump('hello test action');
 		$this->sugarsoapRepository->setLogin();
 		var_dump($response = $this->sugarsoapRepository->getModuleFields('Contacts'));
-		//$this->view->assign('soap', array('user'=>'hallo'));
 		$this->sugarsoapRepository->setLogout();
-	*/
 	}
 
 }

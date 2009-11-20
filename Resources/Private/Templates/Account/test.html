@@ -1,20 +1,36 @@
 <f:section name="content">
 	<f:if condition="{test}">
 		<h3>Welcome to our Support Center {test.salutation.value} {test.first_name.value} {test.last_name.value}.</h3>
-		<f:form method="post" controller="Account" action="test" name="contactForm">
+		<f:form method="post" controller="Account" action="form" name="contactForm">
 			<f:for each="{test}" as="record">
 				<label for="textboxLabel">
 					<span>{record.field.label}</span>
         		</label>
-				<f:if condition="{record.edit}">	
-					<f:then>	
-						<f:form.textbox name="test" value="{record.value}" />
+				<f:if condition="{record.edit}"> <!--only editable fields are shown via form-elements-->	
+					<f:then>
+						<f:if condition="{record.field.type.varchar}"> <!--is condition varchar: textbox-->
+							<f:then>
+								<f:form.textbox name="{record.field.name}:{record.field.type.varchar}" value="{record.value}" />
+							</f:then>
+						</f:if>
+						<f:if condition="{record.field.type.enum}"> <!--is condition enum: select-->
+							<f:then>
+									<f:form.select name="{record.field.name}:{record.field.type.enum}" value="{record.value}" options="{record.field.options}"/>
+							</f:then>
+						</f:if>
+						<f:if condition="{record.field.type.phone}"> <!--is condition phone: textbox-->
+							<f:then>
+								<f:form.textbox name="{record.field.name}:{record.field.type.phone}" value="{record.value}" />
+							</f:then>
+						</f:if>
 					</f:then>
-					<f:else>	
+					<f:else> <!--these fields are not editable but definitely viewable-->	
 						{record.value}
 					</f:else>
 				</f:if><br />
 			</f:for>
+			<f:form.submit value="Submit"/>
+			<f:link.action action="form" >click!</f:link.action>
 		</f:form>
 	</f:if>
 </f:section>

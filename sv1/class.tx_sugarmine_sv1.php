@@ -29,6 +29,7 @@
 
 require_once(PATH_t3lib.'class.t3lib_svbase.php');
 require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/nusoap/lib/nusoap.php');
+require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/nusoap/lib/class.wsdlcache.php');
 require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/Blowfish/Blowfish.php');
 
 /**
@@ -133,12 +134,12 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 	function init()	{	
 		//$this->writeDevLog = TRUE;
 		// init service-configuration from typos global localconf:
-		$this->soapUrl = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['url'];
-		$this->user = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['user'];
-		$this->passw = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['passw'];
-		$this->passwField = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['passwField'];
-		$this->passwKey = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['passwKey'];
-		$this->dummy = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['t3DummyUserName'];
+		$this->soapUrl = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['sugar']['url'];
+		$this->user = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['sugar']['user'];
+		$this->passw = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['sugar']['passw'];
+		$this->passwField = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['sugar']['passwField'];
+		$this->passwKey = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['sugar']['passwKey'];
+		$this->dummy = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['auth']['t3DummyUserName'];
 		var_dump('SERVICE_INIT:');
 		if($this->soapUrl != '' && $this->user != '' && $this->passw != '' && $this->passwField != '' && $this->passwKey != '' && $this->dummy != '') {
 		var_dump('INIT: OK');
@@ -218,7 +219,7 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 		
 		if ($this->login['status']=='login' && $this->login['uident'])	{
 			######################### SugarCRM-REQUEST ###############################
-			$this->setLogin();
+			$this->Login();
 			$result = $this->getSugarContact();
 			$this->client->call('logout',$this->session_id); // direct logout!
 			######################### /SugarCRM-REQUEST ###############################
@@ -231,7 +232,7 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 				$user['username'] = $this->login['uname'];
 				$user['password'] = $this->login['uident'];
 				
-				$GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['temp'] = $result;
+				$GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['auth']['temp'] = $result;
 				$this->_isAuthenticated = true;
 			}
 
@@ -257,20 +258,46 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 	 * @return	void
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
-	private function setLogin() {
+	private function Login() {
 		
-		$this->client = new soapclientw($this->soapUrl.'/soap.php?wsdl',true,'','','','');
+		####WSDL-CACHING####
+			$cache = new wsdlcache(t3lib_extMgm::extPath('sugarmine').'Resources/Library/nusoap/lib/tmp', 86400);
+			$wsdl = $cache->get($this->soapUrl.'/soap.php?wsdl'); // try to get a cached wsdl-file. 
+			if(is_null($wsdl)) // create one, if there is no wsdl file cached
+			{
+  				$wsdl = new wsdl($this->soapUrl.'/soap.php?wsdl', '', '', '', '', 5);
+  				 // Check for any errors from the wsdl object
+  				$err = $wsdl->getError();
+  				if ($err) {
+  					var_dump('<h2>WSDL Constructor error (Expect - 404 Not Found)</h2><pre>' . $err . '</pre>');
+  					var_dump('<h2>Debug</h2><pre>' . htmlspecialchars($wsdl->getDebug(), ENT_QUOTES) . '</pre>');
+  					exit();
+  				}
+  				$cache->put($wsdl);
+  				var_dump('downloading wsdl-file');
+			} else {
+				$wsdl->clearDebug();
+				$wsdl->debug('Retrieved from cache');
+			}
+		####/WSDL-CACHING####
+		$this->client = new soapclientw($wsdl,true,'','','','');
+		// Check for any errors from the client object
+		$err = $this->client->getError();
+		if ($err) {
+			$this->error = '<h2>Constructor error</h2><pre>' . $err . '</pre>';
+			var_dump($this->error);
+		}
+		// define authentication-array
 		$auth_array = array(
    			'user_auth' => array(
      		'user_name' => $this->user,
      		'password' => md5($this->passw),
    			));
-
-  		$login_results = $this->client->call('login',$auth_array);
-  		$this->session_id = $login_results['id'];
+  		$login_results = $this->client->call('login',$auth_array); // call the login service
+  		$this->session_id = $login_results['id']; // store the session_id
 	}
 	
-    /**
+  /**
 	 * Authenticates the SugarMine contact-logon by custom blowfish-password and email-address from SugarCRM-database.
 	 * 
 	 * @return	mixed false or array

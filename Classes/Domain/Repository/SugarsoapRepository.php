@@ -25,6 +25,7 @@
 
 require_once(t3lib_extMgm::extPath('sugarmine').'Classes/Domain/Repository/SetupRepository.php');
 require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/nusoap/lib/nusoap.php');
+require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/nusoap/lib/class.wsdlcache.php');
 require_once(t3lib_extMgm::extPath('sugarmine').'Resources/Library/Blowfish/Blowfish.php');
 
 /**
@@ -67,12 +68,6 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	
 	/**
 	 * 
-	 * @var array
-	 */
-	public $result;
-	
-	/**
-	 * 
 	 * @var string
 	 */
 	private $passw;
@@ -87,7 +82,7 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 * 
 	 * @var string
 	 */
-	private $passwField;
+	public $passwField;
 	
 	/**
 	 * 
@@ -128,52 +123,67 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function __construct() {
-		
-			if (is_object($this->setup = new Tx_Sugarmine_Domain_Repository_SetupRepository)); {
+		$this->setup = t3lib_div::makeInstance('Tx_Sugarmine_Domain_Repository_SetupRepository');
+		if(is_object($this->setup)) {
+		//if (is_object($this->setup = new Tx_Sugarmine_Domain_Repository_SetupRepository)); {
 				
-				$viewField = $this->setup->getValue('sugar.viewableFields.');
-				$editField = $this->setup->getValue('sugar.editableFields.');
-				//var_dump($editField);
+			$viewField = $this->setup->getValue('sugar.viewableFields.');
+			$editField = $this->setup->getValue('sugar.editableFields.');
+			//var_dump($editField);
 				
-				foreach($viewField as $name => $value) { // value is 1 or ''
+			foreach($viewField as $name => $value) { // value is 1 or ''
 					 
-					if ($value == 1 && $editField[$name] == '') {
-						$fieldConf[] = array('name'=>$name,'edit'=>false);
+				if ($value == 1 && $editField[$name] == '') {
+					$fieldConf[] = array('name'=>$name,'edit'=>false);
 						
-					} elseif ($value == 1 && $editField[$name] == 1) {
-						$fieldConf[] = array('name'=>$name,'edit'=>true);
-					}
-				} /*id (array)
-						name (string)
-						edit (string) */
-				
-				$this->fieldConf = $fieldConf;
-				
-				$this->soapUrl = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['url'];
-				$this->user = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['user'];
-				$this->passw = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['passw'];
-				$this->passwField = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['passwField'];
-				$this->passwKey = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['setup']['passwKey'];
-					// call soapclient if every necessary configuration is available in localconf.php:
-					if(!empty($this->soapUrl) && !empty($this->user) && !empty($this->passw) && !empty($this->passwField) && !empty($this->passwKey) && is_array($this->fieldConf)) {
-						$this->client = new soapclientw($this->soapUrl.'/soap.php?wsdl',true,'','','','');  
-						// Check for any errors from the remote service
-						$err = $this->client->getError();
-						if (!$err && $this->client !== NULL) {
-    						//var_dump($this->client);
-						} else {
-							$this->error = '<p><b>Error: ' . $err . '</b></p>';
-							var_dump($this->error);
-						}
-					} else {
-						exit('ERROR: Please set all necessary configurations!!!');
-					}
+				} elseif ($value == 1 && $editField[$name] == 1) {
+					$fieldConf[] = array('name'=>$name,'edit'=>true);
+				}
+			} /*id (array)
+					name (string)
+					edit (string) */
+			$this->fieldConf = $fieldConf;
+			$this->soapUrl = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['sugar']['url'];
+			$this->user = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['sugar']['user'];
+			$this->passw = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['sugar']['passw'];
+			$this->passwField = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['sugar']['passwField'];
+			$this->passwKey = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugarmine']['sugar']['passwKey'];
+			// call soapclient if every necessary configuration is available in localconf.php and setup.txt:
+			if(!empty($this->soapUrl) && !empty($this->user) && !empty($this->passw) && !empty($this->passwKey) && !empty($this->passwField) && is_array($this->fieldConf)) {
+				####WSDL-CACHING####
+				$cache = new wsdlcache(t3lib_extMgm::extPath('sugarmine').'Resources/Library/nusoap/lib/tmp', 86400);
+				$wsdl = $cache->get($this->soapUrl.'/soap.php?wsdl'); // try to get a cached wsdl-file. 
+				if(is_null($wsdl)) // create one, if there is no wsdl file cached
+				{
+  					$wsdl = new wsdl($this->soapUrl.'/soap.php?wsdl', '', '', '', '', 5);
+  					$err = $wsdl->getError();
+  						if ($err) {
+  							var_dump('<h2>WSDL Constructor error (Expect - 404 Not Found)</h2><pre>' . $err . '</pre>');
+  							var_dump('<h2>Debug</h2><pre>' . htmlspecialchars($wsdl->getDebug(), ENT_QUOTES) . '</pre>');
+  							exit();
+  						}
+  					$cache->put($wsdl);
+  					var_dump('downloading wsdl-file');
+				} else {
+					$wsdl->clearDebug();
+					$wsdl->debug('Retrieved from cache');
+				}
+				####/WSDL-CACHING####
+				$this->client = new soapclientw($wsdl,true,'','','','');  
+				// Check for any errors from the client object
+				$err = $this->client->getError();
+				if ($err) {
+					$this->error = '<h2>Constructor error</h2><pre>' . $err . '</pre>';
+					var_dump($this->error);
+				}
+			} else {
+				exit('ERROR: Please set all necessary configurations in global localconf.php and setup.txt of sugarmine!!!');
 			}
-			
+		}
 	}
 	
 	/**
-	 * Define a SugarCE-user and login or auto-login by an available static-user.
+	 * Define a SugarCRM-system-user and login or auto-login by an user, defined in localconf.php.
 	 * 
 	 * @param	string	$user
 	 * @param	string	$pass
@@ -193,6 +203,45 @@ class Tx_Sugarmine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 
   		$login_results = $this->client->call('login',$this->auth_array);
   		$this->session_id = $login_results['id'];
+	}
+	
+	/**
+	 * Encrypts your plain text-password with blowfish-magic.
+	 * 
+	 * @param	string	$password (plain-text)
+	 * 
+	 * @return	string
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	private function blowfishEncode($password=null) {
+		
+		#prepare static blowfish-key (identical with sugarCRM-blowfish-key)
+		$key = strval($this->passwKey);
+		
+		$BF = new Crypt_Blowfish($key);
+		$encrPass = $BF->encrypt(strval($password));
+		$encrPass = base64_encode($encrPass);
+		return $encrPass;
+	}
+	
+	/**
+	 * Decrypts your encrypted password.
+	 * 
+	 * @param	string	$password (encrypted)
+	 * 
+	 * @return	string
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function blowfishDecode($password=null) {
+		
+		#prepare static blowfish-key (identical with sugarCRM-blowfish-key)
+		$key = strval($this->passwKey);
+
+		$BF2 = new Crypt_Blowfish($key);
+		$decodedPass = base64_decode($password);
+		$decrPass = $BF2->decrypt($decodedPass);
+		$decrPass = substr($decrPass, 0, -2); // there are two strange chars at the end of the string
+		return $decrPass;
 	}
 	
 	/**

@@ -15,6 +15,7 @@ plugin.tx_sugarmine {
 			password_c = 1
 		}
 		editableFields {
+			salutation = 1
 			first_name = 1
 			last_name = 1
 			title = 1
