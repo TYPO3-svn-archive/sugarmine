@@ -1,0 +1,33 @@
+ # Plugin configuration
+plugin.tx_sugarmine {
+	sugar {
+		viewableFields {
+			salutation = 1
+			first_name = 1
+			last_name = 1
+			title = 1
+			department = 1
+			phone_home = 1
+			phone_work = 1
+			phone_mobile = 
+			email1 = 1
+			email2 = 1
+			password_c = 1
+			t3_password = 1
+		}
+		editableFields {
+			salutation = 1
+			first_name = 1
+			last_name = 1
+			title = 1
+			department = 1
+			phone_home = 1
+			phone_work = 1
+			phone_mobile = 
+			email1 = 
+			email2 = 1
+			password_c = 1
+			t3_password = 1
+		}
+	}
+}
