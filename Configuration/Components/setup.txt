@@ -1,9 +1,0 @@
-# encoding: utf-8
-plugin.F3_SugarMine.components {
-	F3_SugarMine_Content {
-		scope = prototype
-	}
-	F3_SugarMine_Person {
-		scope = prototype
-	}
-}
