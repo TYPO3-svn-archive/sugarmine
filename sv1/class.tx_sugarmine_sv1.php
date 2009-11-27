@@ -293,7 +293,7 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 				$wsdl->debug('Retrieved from cache');
 			}
 		####/WSDL-CACHING####
-		$this->client = new soapclientw($wsdl,true,'','','','');
+		$this->client = new soapclientw($wsdl,true, '', '', '', '', 5);
 		// Check for any errors from the client object
 		$err = $this->client->getError();
 		if ($err) {

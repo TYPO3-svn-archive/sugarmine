@@ -94,7 +94,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 * 
 	 * @var unknown_type
 	 */
-	private $session_id;
+	public $session_id; // should be private
 	
 	/**
 	 * @var array
@@ -133,6 +133,8 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 			
 			$this->viewField = $this->setup->getValue('sugar.viewableFields.');
 			$this->editField = $this->setup->getValue('sugar.editableFields.');
+			$this->viewField['id'] = 1; // these values are absolutely necessary to set entries
+			$this->editField['id'] = null;
 			$this->soapUrl = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['url'];
 			$this->user = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['user'];
 			$this->passw = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['passw'];
@@ -205,7 +207,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 * @return	string
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
-	private function blowfishEncode($password=null) {
+	public function blowfishEncode($password=null) {
 		
 		#prepare static blowfish-key (identical with sugarCRM-blowfish-key)
 		$key = strval($this->passwKey);
@@ -283,6 +285,9 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	
    /**
 	* Update sugar entry with given data-array. 
+	*
+	* @param	string	$module (module-name usually: 'Contacts')
+	* @param	array	$data (associative name-value array of contact-record-updates)
 	*
 	* @return 	boolean
 	* @author 	Sebastian Stein <s.stein@netzelf.de>
@@ -363,6 +368,39 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	}
 	
 	/**
+	 * Get fresh contact-data from SugarCRM as sugar-authenticated user-session.
+	 * 
+	 * @param string $id contactId from SugarCRM (only stored into session, if auth-system was sugar)
+	 * 
+	 * @return array or false
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getContactDataBySugarAuthUser($contactId='') {
+		
+		$table = $module = 'Contacts';
+		$contactId = trim($contactId);
+
+		if($contactId == '') { 
+			return false;
+		}
+
+		$query = $table.'.id="'.$contactId.'"';
+		$matches = $this->getEntryList($module,$query,'',0,$selected_fields = array_keys($this->viewField),0,0);
+
+		if(is_array($matches)) {
+			
+			$contactData['authSystem'] = 'sugar';
+			$contactData['source'] = 'Contacts';
+			$contactData['data'] = $matches['entry_list'][0];
+			$contactData['fields'] = $matches['field_list'];
+			return $contactData;
+			
+		} else {
+			return false;
+		}
+	}
+	
+	/**
 	 * Get contact-data from SugarCRM (only available for authentication against 'typo3' or 'both')
 	 * 
 	 * @param string $userEMail
@@ -371,7 +409,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 * @return array or false
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
-	public function getSugarsContactData($userEMail='', $userName='') {
+	public function getContactDataByTypoAuthUser($userEMail='', $userName='') {
 		
 		$table = $module = 'Contacts';
 		$userEMail = trim($userEMail);
@@ -380,8 +418,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		if($userName == '' || $userEMail == '' || $userNames == null) { 
 			return false;
 		}
-		$this->viewField['id'] = 1;
-		$this->editField['id'] = null;
+		
 		$query = $table.'.first_name="'.$userNames[0].'" AND '.$table.'.last_name="'.$userNames[1].'"';
 		$matches = $this->getEntryList($module,$query,'',0,$selected_fields = array_keys($this->viewField),0,0);
 		if(is_array($matches)) {

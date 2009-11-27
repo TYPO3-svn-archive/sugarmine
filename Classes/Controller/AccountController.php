@@ -54,7 +54,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	 */
 	protected function indexAction() {
 		
-		$this->forward('test');
+		 $this->forward('collect'); // collect data from session and setup.txt into one array
 	}
 	
 	/**
@@ -63,20 +63,21 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	 * @return void
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
-	protected function formAction() {
+	protected function collectAction() {
 		
 		var_dump('hello protected account action');
 		$contactData = $GLOBALS['TSFE']->fe_user->getKey('ses','authorizedUser'); // get $contactData from authorized session
-		
-		// if authSystem is 'typo3', the appropriate password is already injected into $contactData:
-		if ($contactData['authSystem'] == 'sugar') {
-			// decode encrypted password and inject it into $contactData:
-			$contactData['data'][$this->sugarsoapRepository->passwField] = $this->sugarsoapRepository->blowfishDecode($contactData['data'][$this->sugarsoapRepository->passwField]);
-		}
+		//var_dump($contactData);
+		if ($contactData['authSystem'] == 'sugar') { // if authSystem is 'typo3', the appropriate password is already injected into $contactData:
 
-		// viewField and editField definitions are merged with field-values from sugarcrm:
-		foreach($this->sugarsoapRepository->viewField as $name => $value) {
+			$contactData['data'][$this->sugarsoapRepository->passwField] = $this->sugarsoapRepository->blowfishDecode($contactData['data'][$this->sugarsoapRepository->passwField]); // decode encrypted password and inject it into $contactData:
+			
+		} 
+		
+		foreach($this->sugarsoapRepository->viewField as $name => $value) { // viewField and editField definitions are merged with field-values from sugarcrm:
+			
 			if (array_key_exists($name, $contactData['data'])) {		 
+				
 				if ($value == 1 && $this->sugarsoapRepository->editField[$name] != 1) {
 					$fieldConf[$name] = array('value'=>$contactData['data'][$name],'edit'=>false);
 						
@@ -85,9 +86,6 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 				}
 			}
 		}
-		
-		//$fieldConf = $this->sugarsoapRepository->fieldConf;
-		//$contactData['data'] = array_intersect_key($contactData['data'],$fieldConf);
 
 		foreach ($contactData['fields'] as $id => $field) {	// $contactData['fields'] is an array with database-field-information
 				
@@ -125,10 +123,10 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 										'edit'=>$field2['edit'], 
 										'field'=>$field,
 									);
-				/*$DATA =	name	(array)
+				/*$DATA =	name	(array) 
 								value	(string)
 								edit	(boolean)
-								field	(array)
+								field	(array) //TODO: reducing of redundancy: existing field-definitions should be top keys
 									name	(string)
 									type	(string) 
 									label	(string)
@@ -139,60 +137,118 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 				}
 			}
 		} 
-		//TODO: reducing of redundancy: existing field-definitions have to be a top key
 		
-		$DATA['id']['style'] = array('hidden'=>'hidden');
+		$DATA['id']['style'] = array('hidden'=>'hidden'); 
 		//var_dump($DATA);
 		
 		if(is_array($DATA)) {
 			
-			$this->view->assign('contact', $DATA);
-		} else {
+			$GLOBALS['TSFE']->fe_user->setKey('ses','collectedData', $DATA);
+			$this->forward('form');
 			
+		} else {
 			var_dump('ERROR: No valid field configuration available');
+			
 		}
-
+	}
+	
+	protected function formAction() {
+		
+		$DATA = $GLOBALS['TSFE']->fe_user->getKey('ses','collectedData');
+		$this->view->assign('contact', $DATA);
+		
 	}
 	
 	/**
-	 * Handles validation of posts and passes the approved data to a setEntry() method,
-	 * which finally calls the apprppriate SugarCRM-WebService.
+	 * Handles validation of posts (creates error-flash values) and passes the approved data to a setEntry() method,
+	 * which finally calls the appropriate SugarCRM-WebService.
 	 *
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	protected function saveAction() {
 		
 		var_dump('hello protected form action');
+		$DATA = $GLOBALS['TSFE']->fe_user->getKey('ses','collectedData');
 		$post = t3lib_div::_POST();
 		
-		foreach ($post['tx_sugarmine_sugarmine'] as $name => $value) {
+		foreach ($post['tx_sugarmine_sugarmine'] as $name => $value) { // TODO: maybe its better to make a validatorRepository
 			// pre-validation:
 			if($name !== '__hmac' && $name !== '__referrer' && $value !== null && $value !== '') {
+				
 				$field = explode(':',$name); 
-				// raw field-type validation
+				$field[1] = ($name === 'id') ? 'id' : $field[1]; // hidden id field comes without type definition: create one
+				
 				switch($field[1]) {
 					case 'varchar': {
-						$validValues[$field[0]] = (is_string($value)) ? $value : null;
+						if ($field[0] === 'email1' || $field[0] === 'email2') {
+					
+							$valObj = t3lib_div::makeInstance('Tx_Extbase_Validation_Validator_EmailAddressValidator'); // this is useful, because its a quite long pattern!
+							$error = ($valObj->isvalid($value) === true) ? false : 'The given subject was not a valid email address.';
+				
+						} else {
+							$error = (is_string($value)) ? false : 'The given text was not a valid string.';
+						}
 					} break;
-					default: { // test case
-						$validValues[$field[0]] = $value;
-					}	
+					case 'encrypt': { // at this point, the value is still DEcrypted
+						$error = (is_string($value)) ? false : 'The given text was not a valid string.';
+						$passwChange = ($field[0] === $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['passwField']) ? true : null;
+					} break;
+					case 'enum': {
+						$error = (is_string($value)) ? false : 'The given option was not a valid string.';
+					} break;
+					case 'phone': {
+						$error = (!preg_match('~[^-\s\d./()+]~', $value)) ? false : 'The given phone-number seems not to be a valid one';
+					} break;
+					case 'id': { //TODO: this is a fatal exception error and should forward to a refreshAction() or logout
+						$error = (!preg_match('~[^a-z0-9-]~', $value)) ? false : 'Fatal error: contact-id is not valid!'; 
+					} break;
+					default: $error = 'field type is currently unknown';
 				}
-				// precise validation:
-				if ($field[0] === 'email1' || $field[0] === 'email2') {
-						$valObj = t3lib_div::makeInstance('Tx_Extbase_Validation_Validator_EmailAddressValidator');
-						$validValues[$field[0]] = ($valObj->isvalid($value) === true) ? $value : null;
+				
+				if ($error === false) {
+				
+					 $validFields[]= array(
+                        'name'  =>      $field[0],
+                        'value' =>      $value  
+               		 );
+					unset($DATA[$field[0]]['error']); // delete existing error from data array
+				
+				} elseif (is_string($error)) {
+				
+					$DATA[$field[0]]['error'] = $error; // catch and store error
+					$errorFlag = true; // set error flag
+					
 				}
-			} if ($validValues[$field[0]] === null) {
-				unset($validValues[$field[0]]);
 			}
 		}
-		
-		var_dump($validValues);
+
+		if ($errorFlag === true) {
+			
+			unset($validFields);
+			$GLOBALS['TSFE']->fe_user->setKey('ses','collectedData', $DATA);
+			$this->forward('form'); // TODO: is it better to write an own template for error reporting inside the form?
+			
+		} elseif ($validFields[1] !== null) { // successful validation of more fields than just id:
+			
+			if($passwChange !== true) { // inject old encrypted password (necessary for setEntry() of SugarCRM)
+				$validFields[]= array(
+                        'name'  =>      $this->sugarsoapRepository->passwField,
+                        'value' =>      $DATA[$this->sugarsoapRepository->passwField]['value']  
+               		 );
+			}
+			
+			$GLOBALS['TSFE']->fe_user->setKey('ses','collectedData', $DATA);
+			$this->sugarsoapRepository->setLogin();
+			$result = $this->sugarsoapRepository->setEntry('Contacts', $validFields);
+			var_dump('values are valid!!');
+			var_dump($validFields);
+			var_dump($result);
+			$this->forward('form'); //TODO: write an own template with report message and link to REFRESH shown values from SugarCRM
+		}
 	}
 	
 	/**
-	 * testAction: Only for test-purposes!
+	 * TestAction: Only for test-purposes!
 	 *
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
