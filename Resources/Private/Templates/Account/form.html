@@ -1,6 +1,9 @@
 <f:section name="content">
 	<f:if condition="{contact}">
-		<h3>Welcome to our Support Center {contact.salutation.value} {contact.first_name.value} {contact.last_name.value}.</h3>
+		<f:link.action action="refresh" controller="Start" >Refresh</f:link.action>
+		<f:link.action action="logout" controller="Start" >Logout</f:link.action>
+		<h3>Welcome to our Support Center</h3>
+		<h4> {contact.salutation.value} {contact.first_name.value} {contact.last_name.value}:</h4>
 		<f:form method="post" controller="Account" action="save" name="contactForm">
 			<f:for each="{contact}" as="record">
 				<dl>
@@ -61,6 +64,5 @@
 			
 			<f:form.submit value="Submit"/><br />
 		</f:form>
-		<f:link.action action="refresh" controller="Start" >Refresh</f:link.action>
 	</f:if>
 </f:section> 

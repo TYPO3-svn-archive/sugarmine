@@ -46,65 +46,56 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 	var $extKey = 'sugar_mine';							// The extension key.
 	
 	/**
-	 * Site_url to SugarCRM.
 	 * 
-	 * @var string
+	 * @var string	Site_url to SugarCRM.
 	 */
 	private $soapUrl = '';
 	
 	/**
-	 * User-name of SugarCRM.
 	 * 
-	 * @var string
+	 * @var string	User-name of SugarCRM.
 	 */
 	private $user = '';
 	
 	/**
-	 * Password of SugarCRM.
 	 * 
-	 * @var string
+	 * @var string	Password of SugarCRM.
 	 */
 	private $passw = '';
 	
 	/**
-	 * Custom password field name of SugarCRM. 
-	 *
-	 * @var string
+	 * 
+	 * @var string	Custom password field name of SugarCRM. 
 	 */
 	private $passwField = '';
 	
 	/**
-	 * Cashed Blowfish encryption-key of SugarCRM.
 	 * 
-	 * @var string
+	 * @var string	Cashed Blowfish encryption-key of SugarCRM.
 	 */
 	private $passwKey = '';
 	
-	/**
-	 * Dummy TYPO3 user name of an existing fe_user.
+	/*
 	 * 
-	 * @var string
+	 * @var string	Dummy TYPO3 user name of an existing fe_user.
 	 */
 	private $dummy = '';
 	
 	/**
-	 * NuSOAP-Client of SugarCRM.
 	 * 
-	 * @var unknown_type
+	 * @var object	NuSOAP-Client of SugarCRM.
 	 */
 	private $client = '';
 	
 	/**
-	 * NuSOAP-Client-SessionID.
 	 * 
-	 * @var string
+	 * @var string	NuSOAP-Client-SessionID.
 	 */
 	private $session_id = '';
 	
 	/**
-	 * The System for user-authentication (typo3 or sugar).
 	 * 
-	 * @var string
+	 * @var string	The System for user-authentication (typo3 or sugar).
 	 */
 	private $authSystem = '';
 	
@@ -141,16 +132,15 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 		$this->passwKey = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['passwKey'];
 		$this->dummy = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['auth']['t3DummyUserName'];
 		$this->authSystem = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['auth']['system'];
-		var_dump('SERVICE_INIT:');
 		$available = false;
 		if ($this->authSystem == 'sugar' || $this->authSystem == 'both') {
 			if($this->soapUrl != '' && $this->user != '' && $this->passw != '' && $this->passwField != '' && $this->passwKey != '' && $this->dummy != '') {
-				var_dump('INIT: OK');
+				var_dump('SERVICE_INIT: OK');
 				$available = parent::init();
 			}
 		} elseif ($this->authSystem == 'typo3') {
 			if ($this->soapUrl != '' && $this->user != '' && $this->passw != '') {
-				var_dump('INIT: OK');
+				var_dump('SERVICE_INIT: OK');
 				$available = parent::init();
 			}
 		} return $available;

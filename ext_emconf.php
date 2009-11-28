@@ -11,8 +11,8 @@
 ########################################################################
 
 $EM_CONF[$_EXTKEY] = array(
-	'title' => 'SugarMine - SugarCRM/Redmine-Interface',
-	'description' => 'Customer-center as FE-Plugin with connection to SugarCRM and Redmine',
+	'title' => 'SugarCRM/Redmine-Interface',
+	'description' => 'Customer-center as FE-Plugin (incl. auth-service) with connection to SugarCRM and Redmine',
 	'category' => 'plugin',
 	'shy' => 0,
 	'version' => '0.0.1',

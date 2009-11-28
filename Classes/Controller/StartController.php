@@ -28,8 +28,6 @@
  * @author	Sebastian Stein <s.stein@netzelf.de>
  */
 class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_ActionController {
-
-	//TODO: logoutAction that kills session data and sets logout
 	
 	/**
 	 * SugarMines Repository for NuSOAP-WebServices of SugarCRM.
@@ -42,7 +40,6 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	 * Initializes the current action.
 	 *
 	 * @return void
-	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	protected function initializeAction() {
 		
@@ -63,48 +60,47 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 		$authSystemWas = $GLOBALS['TSFE']->fe_user->getKey('ses','authSystemWas');
 		
 		if($GLOBALS["TSFE"]->loginUser) {
-			
-			if (is_string($sessionData['id']['value'])) { // case: forwards ses-stored user data
+			// actually there are four different session cases:
+			if (is_string($sessionData['id']['value'])) { // case1: forwards recently session-stored user data
 				
-				var_dump('collectedData found');
-				var_dump($sessionData);
+				var_dump('case1: forwards recently session-stored user data');
 				$this->forward('form','Account');
 				
-			} elseif ($serviceData['authSystem'] == 'sugar') { // case: forwards service-sugar-authenticated user
+			} elseif ($serviceData['authSystem'] == 'sugar') { // case2: forwards FRESH SUGAR-authenticated contact-data
 				
-				var_dump($serviceData);
+				var_dump('case2: forwards FRESH SUGAR-authenticated contact-data');
 				$GLOBALS['TSFE']->fe_user->setKey('ses','authorizedUser', $serviceData); // put temporary contactData into current authorized session
-				$GLOBALS['TSFE']->fe_user->setKey('ses','authSystemWas', 'Sugar');
-				$GLOBALS['TSFE']->fe_user->setKey('ses','contactId', $serviceData['data']['id']);
+				$GLOBALS['TSFE']->fe_user->setKey('ses','authSystemWas', 'Sugar'); // put information about authentication system into session data
+				$GLOBALS['TSFE']->fe_user->setKey('ses','contactId', $serviceData['data']['id']); // put contact id into session data
 				$GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['auth']['temp'] = null;
 				$this->forward('index','Account');
 
-			} elseif ($authSystemWas == 'Sugar') { // case: refresh data of sugar-authenticated user
+			} elseif ($authSystemWas == 'Sugar' && !is_string($sessionData['id']['value'])) { // case3: refresh data of recently SUGAR-authenticated user
 				
+				var_dump('case3: refresh data of recently SUGAR-authenticated user');
 				$contactId = $GLOBALS['TSFE']->fe_user->getKey('ses','contactId');
  
 				$this->sugarsoapRepository->setLogin();
 				$contactData = $this->sugarsoapRepository->getContactDataBySugarAuthUser($contactId);
 				
 				if (is_array($contactData)) {
-					$GLOBALS['TSFE']->fe_user->setKey('ses','authorizedUser', $contactData);
+					$GLOBALS['TSFE']->fe_user->setKey('ses','authorizedUser', $contactData); // put temporary contactData into current authorized session
 					$this->forward('index','Account');
 				} else {
 					var_dump('authenticated SugarCRM-user was suddenly not found on SugarCRMs database');
 				}
-				//TODO: still without functionality: should call a getContactDataById() method of sugarsoapRepository
 				
-			} elseif ($authSystem == 'typo3' || $authSystem == 'both') { // case: get contact data after fresh authentication
+			} elseif (($authSystem == 'typo3' || $authSystem == 'both') && !is_string($sessionData['id']['value']) && $authSystemWas != 'Sugar') { // case4: refresh or create (the first time) data of TYPO3-authenticated user
 				
+				var_dump('case4: refresh or create (the first time) data of TYPO3-authenticated user');
 				$user = $GLOBALS['TSFE']->fe_user->user; 
 				
 				$this->sugarsoapRepository->setLogin();
 				$contactData = $this->sugarsoapRepository->getContactDataByTypoAuthUser($user['username'], $user['name']); // actually, $user['username'] contains an email address
-				$this->sugarsoapRepository->setLogout();
 				
 				if (is_array($contactData)) {
 					
-					$GLOBALS['TSFE']->fe_user->setKey('ses','authSystemWas', 'Typo3');
+					$GLOBALS['TSFE']->fe_user->setKey('ses','authSystemWas', 'Typo3'); // put information about authentication system into session data
 					$contactData['data']['t3_password'] = $user['password']; // inject t3 password into sugars contact data:
 					$GLOBALS['TSFE']->fe_user->setKey('ses','authorizedUser', $contactData); // put temporary contactData into current authorized session
 					$this->forward('index','Account');
@@ -119,21 +115,31 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	}
 	
 	/**
-	 * Refreshs session data and forwards to index.
+	 * Clears session data and redirects to index in order to refresh data from SugarCRM.
 	 * 
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	protected function refreshAction() {
 
 		$GLOBALS['TSFE']->fe_user->setKey('ses','collectedData',null);
-		//$sessionData = $GLOBALS['TSFE']->fe_user->getKey('ses','collectedData');
-		//tslib_feUserAuth::removeSessionData();
-		$this->forward('index');
-		
+		$this->redirect('index');
 	}
 	
 	/**
-	 * testAction: Only for test-purposes!
+	 * Kills current session and forwards to logout form.
+	 *
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	protected function logoutAction() {
+		
+		$GLOBALS['TSFE']->fe_user->setKey('ses','collectedData',null);
+		$GLOBALS['TSFE']->fe_user->setKey('ses','authSystemWas', null);
+		session_destroy();
+		$this->redirectToURI($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['auth']['logoutURI']);
+	}
+	
+	/**
+	 * Only for test-purposes!
 	 *
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
@@ -146,12 +152,7 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 		*/
 	}
 	
-	protected function authAction() {
-		
-	}
-	
 	protected function soapAction() {
-	
 	}
 
 }

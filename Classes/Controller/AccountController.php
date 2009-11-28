@@ -39,7 +39,6 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	 * Initializes the current action.
 	 *
 	 * @return void
-	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	protected function initializeAction() {
 		
@@ -65,7 +64,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	 */
 	protected function collectAction() {
 		
-		var_dump('hello protected account action');
+		var_dump('Controller: Account; Action: form');
 		$contactData = $GLOBALS['TSFE']->fe_user->getKey('ses','authorizedUser'); // get $contactData from authorized session
 		//var_dump($contactData);
 		if ($contactData['authSystem'] == 'sugar') { // if authSystem is 'typo3', the appropriate password is already injected into $contactData:
@@ -74,7 +73,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 			
 		} 
 		
-		foreach($this->sugarsoapRepository->viewField as $name => $value) { // viewField and editField definitions are merged with field-values from sugarcrm:
+		foreach($this->sugarsoapRepository->viewField as $name => $value) { // viewField and editField definitions are merged with field-values (contact data) from sugarcrm:
 			
 			if (array_key_exists($name, $contactData['data'])) {		 
 				
@@ -106,7 +105,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 					//TODO: if condition is true: start next loop
 				}
 				if($name == $field['name']) {
-					######################FLUID######################
+					######################FLUID-PREPARATION######################
 					if($field['type'] == 'enum') { 					// prepare for fluids viewHelper: options-attribute of <f:form.select/>
 						foreach($field['options'] as $key) {		// options (array)		--->	options (array)
 							$temp[$key['name']] = $key['value'];	//		key (array)		--->		name=>'value'
@@ -117,7 +116,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 					$field['type'] = array(  
 										$field['type']=>$field['type']
 									); 
-					#####################/FLUID#######################
+					#####################/FLUID-PREPARATION#######################
 					$DATA[$name] = array(
 										'value'=>$field2['value'], 
 										'edit'=>$field2['edit'], 
@@ -160,18 +159,18 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	}
 	
 	/**
-	 * Handles validation of posts (creates error-flash values) and passes the approved data to a setEntry() method,
-	 * which finally calls the appropriate SugarCRM-WebService.
+	 * Handles validation of posts (with error-reporting) and passes the approved data to a setEntry() method,
+	 * which finally calls the appropriate SugarCRM-WebService to set new record-values.
 	 *
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	protected function saveAction() {
 		
-		var_dump('hello protected form action');
+		var_dump('Controller: Account; Action: save');
 		$DATA = $GLOBALS['TSFE']->fe_user->getKey('ses','collectedData');
 		$post = t3lib_div::_POST();
 		
-		foreach ($post['tx_sugarmine_sugarmine'] as $name => $value) { // TODO: maybe its better to make a validatorRepository
+		foreach ($post['tx_sugarmine_sugarmine'] as $name => $value) { // TODO: maybe its better to move this procedures to a validatorRepository
 			// pre-validation:
 			if($name !== '__hmac' && $name !== '__referrer' && $value !== null && $value !== '') {
 				
@@ -199,8 +198,12 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 					case 'phone': {
 						$error = (!preg_match('~[^-\s\d./()+]~', $value)) ? false : 'The given phone-number seems not to be a valid one';
 					} break;
-					case 'id': { //TODO: this is a fatal exception error and should forward to a refreshAction() or logout
+					case 'id': { 
 						$error = (!preg_match('~[^a-z0-9-]~', $value)) ? false : 'Fatal error: contact-id is not valid!'; 
+						if (is_string($error)) { //this is a fatal exception error that redirects to logout action!
+							var_dump($error);
+							$this->redirect('logout', 'Start');
+						}
 					} break;
 					default: $error = 'field type is currently unknown';
 				}
@@ -226,11 +229,14 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 			
 			unset($validFields);
 			$GLOBALS['TSFE']->fe_user->setKey('ses','collectedData', $DATA);
-			$this->forward('form'); // TODO: is it better to write an own template for error reporting inside the form?
+			$this->redirect('form'); //TODO: write an own template with error-report
 			
-		} elseif ($validFields[1] !== null) { // successful validation of more fields than just id:
+		} elseif ($validFields[1] !== null) { // successful validation of more fields than just id as fixed value:
 			
-			if($passwChange !== true) { // inject old encrypted password (necessary for setEntry() of SugarCRM)
+			// inject unchanged decrypted password into setEntry value list (it is absolutely necessary to submit an existing custom password as PLAIN-TEXT to SugarCRM)
+			// i donno why, but if you dont submit any custom password, it will get lost (shown as weird encryption on sugars frontend) and if you submit it ENcrypted, sugarcrm will ENcrypt it again and therefore destroy it. *NARF*
+			// this is why it has currently be send DEcrypted as plain text password :S
+			if($passwChange !== true && $GLOBALS['TSFE']->fe_user->getKey('ses','authSystemWas') === 'Sugar') { 
 				$validFields[]= array(
                         'name'  =>      $this->sugarsoapRepository->passwField,
                         'value' =>      $DATA[$this->sugarsoapRepository->passwField]['value']  
@@ -240,10 +246,15 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 			$GLOBALS['TSFE']->fe_user->setKey('ses','collectedData', $DATA);
 			$this->sugarsoapRepository->setLogin();
 			$result = $this->sugarsoapRepository->setEntry('Contacts', $validFields);
-			var_dump('values are valid!!');
-			var_dump($validFields);
-			var_dump($result);
-			$this->forward('form'); //TODO: write an own template with report message and link to REFRESH shown values from SugarCRM
+			//var_dump($validFields);
+			
+			if ($result['error']['number'] === '0') { // case: no error reported from SugarCRM
+				$this->redirect('refresh', 'Start'); // lets have a look at your fresh changes from SugarCRM
+			} else {
+				var_dump('sry, there was an unknown problem with SugarCRM');
+				var_dump($result); // shows reported results (including errors)
+				$this->redirect('form');
+			}		
 		}
 	}
 	

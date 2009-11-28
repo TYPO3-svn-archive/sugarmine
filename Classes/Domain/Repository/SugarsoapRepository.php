@@ -39,85 +39,72 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	
 	
 	/**
-	 * @var	string
+	 *  
+	 * @var	string	Site_url value of sugars config.php
 	 */
-	public $soapUrl;
+	private $soapUrl = '';
 	
 	/**
-	 * Contains all available contact data from sugarCRM 
 	 * 
-	 * @var array
+	 * @var	Tx_SugarMine_Domain_Repository_SetupRepository
 	 */
-	public $contactData = null;
-	
-	/**
-	 * @var Tx_SugarMine_Domain_Repository_SetupRepository
-	 */
-	public $setup;
+	private $setup = '';
 
 	/**
 	 * 
-	 * @var unknown_type
+	 * @var object	NuSoapclient
 	 */
-	private $client;
+	private $client = '';
 	
 	/**
 	 * @var string
 	 */
-	public $error;
+	public $error = '';
 	
 	/**
 	 * 
-	 * @var string
+	 * @var string	User password of SugarCRM
 	 */
-	private $passw;
+	private $passw = '';
 	
 	/**
 	 * 
-	 * @var string
+	 * @var string	Blowfish encryption key of SugarCRM from: cache/blowfish
 	 */
-	private $passwKey;
+	private $passwKey = '';
 	
 	/**
 	 * 
-	 * @var string
+	 * @var string	Custom encrypted Password field of SugarCRM
 	 */
-	public $passwField;
+	public $passwField = ''; // should be protected
 	
 	/**
 	 * 
-	 * @var string
+	 * @var string	User name of SugarCRM
 	 */
-	private $user;
+	private $user = '';
 	
 	/**
 	 * 
-	 * @var unknown_type
+	 * @var string	Current Session Id of a nusoap session with SugarCRM
 	 */
-	public $session_id; // should be private
+	private $session_id = '';
 	
 	/**
-	 * @var array
+	 * @var array	Contains current login-data an user of SugarCRM
 	 */
-	private $auth_array;
+	private $auth_array = '';
 	
-	/**
+	/** 
 	 * 
-	 * @var string
-	 */
-	public $contactID;
-	
-	/**
-	 * Defined by Configuration/TypoScript/setup.txt: Contains field-configuration of contact-data.
-	 * 
-	 * @var array
+	 * @var array	Defined by Configuration/TypoScript/setup.txt: Contains field-configuration of contact-data.
 	 */
 	public $viewField = '';
 	
 	/**
-	 * Defined by Configuration/TypoScript/setup.txt: Contains field-configuration of contact-data.
-	 * 
-	 * @var array
+	 *  
+	 * @var array	Defined by Configuration/TypoScript/setup.txt: Contains field-configuration of contact-data.
 	 */
 	public $editField = '';
 	
@@ -144,7 +131,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 			// call soapclient if every necessary configuration is available in localconf.php and setup.txt:
 			if(!empty($this->soapUrl) && !empty($this->user) && !empty($this->passw) && !empty($this->passwKey) && !empty($this->passwField) && !empty($this->viewField)) {
 				####WSDL-CACHING####
-				$cache = new wsdlcache(t3lib_extMgm::extPath('sugar_mine').'Resources/Library/nusoap/lib/tmp', 86400);
+				$cache = new wsdlcache(t3lib_extMgm::extPath('sugar_mine').'Resources/Library/nusoap/lib/tmp', 86400); // TODO: should be defined via typos localconf
 				$wsdl = $cache->get($this->soapUrl.'/soap.php?wsdl'); // try to get a cached wsdl-file. 
 				if(is_null($wsdl)) // download one, if there is no cached wsdl file in tmp-folder.
 				{
@@ -187,8 +174,8 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 */
 	public function setLogin($user=null,$pass=null) {
 		
-		$this->user = (empty($user)) ? $this->user : $user;
-		$this->passw = (empty($pass)) ? $this->passw : $pass;
+		$this->user = ($user === null) ? $this->user : $user;
+		$this->passw = ($pass === null) ? $this->passw : $pass;
 		$this->auth_array = array(
    			'user_auth' => array(
      		'user_name' => $this->user,
@@ -207,7 +194,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 * @return	string
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
-	public function blowfishEncode($password=null) {
+	private function blowfishEncode($password=null) {
 		
 		#prepare static blowfish-key (identical with sugarCRM-blowfish-key)
 		$key = strval($this->passwKey);
@@ -219,7 +206,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	}
 	
 	/**
-	 * Decrypts your encrypted password.
+	 * Decrypts a blowfish encrypted password.
 	 * 
 	 * @param	string	$password (encrypted)
 	 * 
@@ -303,30 +290,6 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	} 
 	
 	/**
-	 * Get an array-list of all available SugarCE-modules.
-	 * 
-	 * @return	array
-	 * @author	Sebastian Stein <s.stein@netzelf.de>
-	 */
-	public function getAvailableModules() {
-		
-		return $this->client->call('get_available_modules',$this->session_id);
-	}
-	
-	/**
-	 * Get all fields of your module.
-	 * 
-	 * @param	string	$module
-	 * 
-	 * @return	array
-	 * @author	Sebastian Stein <s.stein@netzelf.de>
-	 */
-	public function getModuleFields($module) {
-		
-		return $this->client->call('get_module_fields',array($this->session_id,$module));
-	}
-	
-	/**
 	 * Logout and kill current session-data.
 	 * 
 	 * @return	void
@@ -337,34 +300,6 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		$this->client->call('logout',$this->session_id);
 		$this->auth_array = null;
 		$this->session_id = null;
-		$this->contactID = null;
-	}
-	
-	/**
-	 * Get an user GUID-number.
-	 * 
-	 * @return	string
-	 * @author	Sebastian Stein <s.stein@netzelf.de>
-	 */
-	public function getUserGuid() {
-		
-		$user_guid = $this->client->call('get_user_id',$this->session_id); 
-  		return "\n".$this->auth_array['user_auth']['user_name'].' has a GUID of '  . $user_guid . "\n\n";
-	}
-	
-	/**
-	 * Get Relationships of an authorized SugarCRM-contact.
-	 * 
-	 * @return	array
-	 * @author	Sebastian Stein <s.stein@netzelf.de>
-	 */
-	public function getContactRelationships() {
-		
-		if($this->contactID != '') {
-			return $this->client->call('get_contact_relationships',array($this->user,$this->password,$this->contactID));
-		} else {
-			/*var_dump('Sry, there is no authorisation available')*/;
-		}
 	}
 	
 	/**
@@ -432,6 +367,61 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 			} return $contactData;
 		} else {
 			return false;
+		}
+	}
+	
+	######################################--MINOR NUSOAP CALLS--########################################################
+	
+    /**
+	 * Get an array-list of all available SugarCE-modules.
+	 * 
+	 * @return	array
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getAvailableModules() {
+		
+		return $this->client->call('get_available_modules',$this->session_id);
+	}
+	
+	/**
+	 * Get all fields of your module.
+	 * 
+	 * @param	string	$module
+	 * 
+	 * @return	array
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getModuleFields($module) {
+		
+		return $this->client->call('get_module_fields',array($this->session_id,$module));
+	}
+	
+	/**
+	 * Get an user GUID-number.
+	 * 
+	 * @return	string
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getUserGuid() {
+		
+		$user_guid = $this->client->call('get_user_id',$this->session_id); 
+  		return "\n".$this->auth_array['user_auth']['user_name'].' has a GUID of '  . $user_guid . "\n\n";
+	}
+	
+	/**
+	 * Get Relationships of an authorized SugarCRM-contact by contact-ID.
+	 * 
+	 * @param	string	$contactId
+	 * 
+	 * @return	array
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getContactRelationships($contactId = '') {
+		
+		if($contactId != '') {
+			return $this->client->call('get_contact_relationships',array($this->user,$this->password,$contactId));
+		} else {
+			/*var_dump('Sry, there is no authorisation available')*/;
 		}
 	}
 	

@@ -7,14 +7,14 @@ if (!defined ('TYPO3_MODE')) 	die ('Access denied.');
  * the user input (default settings, FlexForm, URL etc.)
  */
 Tx_Extbase_Utility_Extension::configurePlugin(
-	$_EXTKEY,											// The extension name (in UpperCamelCase) or the extension key (in lower_underscore)
+	$_EXTKEY,													// The extension name (in UpperCamelCase) or the extension key (in lower_underscore)
 	'SugarMine',												// A unique name of the plugin in UpperCamelCase
-	array(												// An array holding the controller-action-combinations that are accessible 
-		'Start' => 'index,refresh,soap,test,auth,login',		// The first controller and its first action will be the default 
+	array(														// An array holding the controller-action-combinations that are accessible 
+		'Start' => 'index,refresh,logout,test,login,soap',		// The first controller and its first action will be the default 
 		'Account' => 'index,collect,form,save,test',
 		),
-	array(												// An array of non-cachable controller-action-combinations (they must already be enabled)
-		'Start' => 'index,refresh,soap,test,auth,login',
+	array(														// An array of non-cachable controller-action-combinations (they must already be enabled)
+		'Start' => 'index,refresh,logout,test,login,soap',
 		'Account' => 'index,collect,form,save,test',
 		)
 );

@@ -1,0 +1,16 @@
+The next following lines describe an exemplary additional content of:
+"typo3conf/localconf.php"
+
+Note, that it is necessary to define these vars for SugarMine!!!
+
+// sugarCRM setup for sugarmine extension:
+$TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['sugar']['url'] = 'http://127.0.0.1/sugarce';
+$TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['sugar']['user'] = 'admin';
+$TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['sugar']['passw'] = 'sugar';
+$TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['sugar']['passwField'] = 'password_c';
+$TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['sugar']['passwKey'] = 'cedebcbe-5716-4375-7549-4af87afbc989';
+// authentication setup
+$TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['auth']['t3DummyUserName'] = 'testpilot';
+$TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['auth']['temp'] = null;
+$TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['auth']['system'] = 'both'; // 'typo3', 'sugar' or 'both'
+$TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['auth']['logoutURI'] = 'index.php?id=2';
