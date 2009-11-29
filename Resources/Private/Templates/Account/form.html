@@ -22,46 +22,49 @@
 									<dd>
 										<f:if condition="{record.field.type.varchar}"> <!--is condition varchar: textbox-->
 											<f:then>
-													<f:form.textbox name="{record.field.name}:{record.field.type.varchar}" />
-													{record.value}
+												<f:form.textbox name="{record.field.name}:{record.field.type.varchar}" />
+												{record.value}
+												<b style="color:red;">{record.error}</b>
 											</f:then>
+											<f:else>
+												<f:if condition="{record.field.type.enum}"> <!--is condition enum: select-->
+													<f:then>
+														<f:form.select name="{record.field.name}:{record.field.type.enum}" options="{record.field.options}"/>
+														{record.value}
+														<b style="color:red;">{record.error}</b>
+													</f:then>
+													<f:else>
+														<f:if condition="{record.field.type.phone}"> <!--is condition phone: textbox-->
+															<f:then>
+																<f:form.textbox name="{record.field.name}:{record.field.type.phone}" />
+																{record.value}
+																<b style="color:red;">{record.error}</b>
+															</f:then>
+															<f:else>
+																<f:if condition="{record.field.type.encrypt}"> <!--is condition encrypt: password-->
+																		<f:then>
+																		<f:form.password name="{record.field.name}:{record.field.type.encrypt}" />
+																		{record.value}
+																		<b style="color:red;">{record.error}</b>
+																		</f:then>
+																</f:if>
+															</f:else>
+														</f:if>
+													</f:else>
+												</f:if>
+											</f:else>
 										</f:if>
-										<f:if condition="{record.field.type.enum}"> <!--is condition enum: select-->
-											<f:then>
-													<f:form.select name="{record.field.name}:{record.field.type.enum}" options="{record.field.options}"/>
-													{record.value}
-											</f:then>
-										</f:if>
-										<f:if condition="{record.field.type.phone}"> <!--is condition phone: textbox-->
-											<f:then>
-													<f:form.textbox name="{record.field.name}:{record.field.type.phone}" />
-													{record.value}
-											</f:then>
-										</f:if>
-										<f:if condition="{record.field.type.encrypt}"> <!--is condition encrypt: password-->
-											<f:then>
-													<f:form.password name="{record.field.name}:{record.field.type.encrypt}" />
-													{record.value}
-											</f:then>
-										</f:if>
-										<f:if condition="{record.error}"> <!-- flash error messages-->
-											<f:then>
-													<b style="color:red;">{record.error}</b>
-											</f:then>	
-										</f:if>
+							
 									</dd>
 								</f:then>
 								<f:else> <!--these fields are not editable but definitely viewable and visible in this case-->	
-									<dd>
-										{record.value}
-									</dd>
+									<dd>{record.value}</dd>
 								</f:else>
 							</f:if>
 						</f:else>
 					</f:if>
 				</dl>
 			</f:for>
-			
 			<f:form.submit value="Submit"/><br />
 		</f:form>
 	</f:if>

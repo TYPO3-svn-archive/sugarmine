@@ -73,7 +73,7 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 				$GLOBALS['TSFE']->fe_user->setKey('ses','authSystemWas', 'Sugar'); // put information about authentication system into session data
 				$GLOBALS['TSFE']->fe_user->setKey('ses','contactId', $serviceData['data']['id']); // put contact id into session data
 				$GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['auth']['temp'] = null;
-				$this->forward('index','Account');
+				$this->forward('collect','Account');
 
 			} elseif ($authSystemWas == 'Sugar' && !is_string($sessionData['id']['value'])) { // case3: refresh data of recently SUGAR-authenticated user
 				
@@ -85,7 +85,7 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 				
 				if (is_array($contactData)) {
 					$GLOBALS['TSFE']->fe_user->setKey('ses','authorizedUser', $contactData); // put temporary contactData into current authorized session
-					$this->forward('index','Account');
+					$this->forward('collect','Account');
 				} else {
 					var_dump('authenticated SugarCRM-user was suddenly not found on SugarCRMs database');
 				}
@@ -103,7 +103,7 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 					$GLOBALS['TSFE']->fe_user->setKey('ses','authSystemWas', 'Typo3'); // put information about authentication system into session data
 					$contactData['data']['t3_password'] = $user['password']; // inject t3 password into sugars contact data:
 					$GLOBALS['TSFE']->fe_user->setKey('ses','authorizedUser', $contactData); // put temporary contactData into current authorized session
-					$this->forward('index','Account');
+					$this->forward('collect','Account');
 				
 				} else {
 					var_dump('authenticated typo3-user was not found on SugarCRMs database');

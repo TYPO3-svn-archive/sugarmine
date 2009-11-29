@@ -121,6 +121,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 										'value'=>$field2['value'], 
 										'edit'=>$field2['edit'], 
 										'field'=>$field,
+										'error'=>null
 									);
 				/*$DATA =	name	(array) 
 								value	(string)
@@ -154,6 +155,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	protected function formAction() {
 		
 		$DATA = $GLOBALS['TSFE']->fe_user->getKey('ses','collectedData');
+		//var_dump($DATA);
 		$this->view->assign('contact', $DATA);
 		
 	}
@@ -205,7 +207,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 							$this->redirect('logout', 'Start');
 						}
 					} break;
-					default: $error = 'field type is currently unknown';
+					default: $error = 'validator: field type is currently unknown';
 				}
 				
 				if ($error === false) {
@@ -214,7 +216,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
                         'name'  =>      $field[0],
                         'value' =>      $value  
                		 );
-					unset($DATA[$field[0]]['error']); // delete existing error from data array
+					$DATA[$field[0]]['error'] = null; // delete existing error from data array
 				
 				} elseif (is_string($error)) {
 				
