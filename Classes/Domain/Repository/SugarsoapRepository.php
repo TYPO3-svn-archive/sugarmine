@@ -28,6 +28,8 @@ require_once(t3lib_extMgm::extPath('sugar_mine').'Resources/Library/nusoap/lib/n
 require_once(t3lib_extMgm::extPath('sugar_mine').'Resources/Library/nusoap/lib/class.wsdlcache.php');
 require_once(t3lib_extMgm::extPath('sugar_mine').'Resources/Library/Blowfish/Blowfish.php');
 
+//TODO: authentication methods that are defined by id (parameter) should call get_entry NOT get_entry_list (unnecessary query-request overhead)
+
 /**
  * SugarMines Repository for NuSOAP-WebServices of SugarCRM.
  * 
@@ -118,10 +120,12 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		$this->setup = t3lib_div::makeInstance('Tx_SugarMine_Domain_Repository_SetupRepository');
 		if(is_object($this->setup)) {
 			
-			$this->viewField = $this->setup->getValue('sugar.viewableFields.');
-			$this->editField = $this->setup->getValue('sugar.editableFields.');
-			$this->viewField['id'] = 1; // these values are absolutely necessary to set entries
+			$this->viewField = $this->setup->getValue('sugar.contacts.viewableFields.');
+			$this->editField = $this->setup->getValue('sugar.contacts.editableFields.');
+			$this->viewField['id'] = 1; // sugarmine must know these following values:
 			$this->editField['id'] = null;
+			$this->viewField['account_id'] = 1;
+			$this->editField['account_id'] = null;
 			$this->soapUrl = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['url'];
 			$this->user = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['user'];
 			$this->passw = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['passw'];
@@ -129,9 +133,9 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 			$this->passwKey = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['passwKey'];
 			
 			// call soapclient if every necessary configuration is available in localconf.php and setup.txt:
-			if(!empty($this->soapUrl) && !empty($this->user) && !empty($this->passw) && !empty($this->passwKey) && !empty($this->passwField) && !empty($this->viewField)) {
+			if($this->soapUrl !== '' && $this->user !== '' && $this->passw !== '' && $this->passwKey !== '' && $this->passwField !== '' && $this->viewField !== '') {
 				####WSDL-CACHING####
-				$cache = new wsdlcache(t3lib_extMgm::extPath('sugar_mine').'Resources/Library/nusoap/lib/tmp', 86400); // TODO: should be defined via typos localconf
+				$cache = new wsdlcache(t3lib_extMgm::extPath('sugar_mine').'Resources/Library/nusoap/lib/tmp', 86400); // TODO: path to tempt should be defined via typos localconf
 				$wsdl = $cache->get($this->soapUrl.'/soap.php?wsdl'); // try to get a cached wsdl-file. 
 				if(is_null($wsdl)) // download one, if there is no cached wsdl file in tmp-folder.
 				{
@@ -177,11 +181,11 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		$this->user = ($user === null) ? $this->user : $user;
 		$this->passw = ($pass === null) ? $this->passw : $pass;
 		$this->auth_array = array(
-   			'user_auth' => array(
-     		'user_name' => $this->user,
-     		'password' => md5($this->passw),
-   			));
-
+   								'user_auth' => array(
+     											'user_name' => $this->user,
+     											'password' => md5($this->passw),
+   												)
+   								);
   		$login_results = $this->client->call('login',$this->auth_array);
   		$this->session_id = $login_results['id'];
 	}
@@ -221,7 +225,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		$BF2 = new Crypt_Blowfish($key);
 		$decodedPass = base64_decode($password);
 		$decrPass = $BF2->decrypt($decodedPass);
-		$decrPass = substr($decrPass, 0, -2); // there are two strange chars at the end of the string
+		$decrPass = ereg_replace("\?","",$decrPass); // strip off all questionmarks
 		return $decrPass;
 	}
 	
@@ -241,17 +245,17 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 */
 	private function getEntryList($module,$where='',$order_by='',$offset=0,array $fields,$max_results=0,$deleted=0) {
 		
-		$result = $this->client->call('get_entry_list',
-        array(
-        $this->session_id,
-        $module,
-        $where,
-        $order_by,
-        $offset,
-        $fields,
-        $max_results,
-        $deleted
-    	));
+		$result = $this->client->call('get_entry_list', array(
+        													$this->session_id,
+       														$module,
+        													$where,
+        													$order_by,
+        													$offset,
+        													$fields,
+        													$max_results,
+        													$deleted
+    													)
+    									);
     	#if there is a valid result, return entry_list and field_list, else dump error
 		if($result['result_count'] > 0) {
     		foreach($result['entry_list'] as $record) {
@@ -276,16 +280,17 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	* @param	string	$module (module-name usually: 'Contacts')
 	* @param	array	$data (associative name-value array of contact-record-updates)
 	*
-	* @return 	boolean
+	* @return 	mixed
 	* @author 	Sebastian Stein <s.stein@netzelf.de>
 	*/             
 	public function setEntry($module,$data){
         
         $result = $this->client->call('set_entry', array(
-        	$this->session_id,
-        	$module,
-            $data
-        ));
+        												$this->session_id,
+        												$module,
+            											$data
+        											)
+        							);
         return $result;
 	} 
 	
@@ -336,6 +341,36 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	}
 	
 	/**
+	 * Get cases from SugarCRM related to authorized SugarMine user.
+	 * 
+	 * @param string $account_id accountId from SugarCRM.
+	 * 
+	 * @return array or false
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getCases($accountId='') {
+		
+		$table = 'cases';
+		$module = 'Cases';
+		$accountId = trim($accountId);
+
+		if($accountId == '') { 
+			return false;
+		}
+
+		$query = $table.'.account_id="'.$accountId.'"';
+		$matches = $this->getEntryList($module,$query,'',0,$selected_fields = array(),0,0);
+
+		if(is_array($matches)) {
+			
+			return $matches;
+		} else {
+			
+			return false;
+		}
+	}
+	
+	/**
 	 * Get contact-data from SugarCRM (only available for authentication against 'typo3' or 'both')
 	 * 
 	 * @param string $userEMail
@@ -370,10 +405,112 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		}
 	}
 	
-	######################################--MINOR NUSOAP CALLS--########################################################
+	########################--MINOR IMPORTANT NUSOAP CALLS--##########################
+	## they were successfully tested, but are CURRENTLY not necessary for SugarMine ##
+	##################################################################################
+	
+	/**
+	 * Get an entry of SugarCRM-database defined by id.
+	 * 
+	 * @param	string	$moduleName
+	 * @param	string	$id
+	 * @param	array	$select_fields
+	 * 
+	 * @return	mixed
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getEntry($moduleName='', $id='', $select_fields = array()) {
+		
+		if ($moduleName !== '' && $id !== '') {
+			return $this->client->call('get_entry', array(
+												$this->session_id,
+												$moduleName,
+												$id,
+												$select_fields
+										)
+							);
+		} else {
+			return false;
+		}
+	}
+	
+	/**
+	 * Set a new contact on sugarCRMs database.
+	 * 
+	 * @param	string	$email
+	 * @param	string	$password
+	 * TODO: define some more contact parameters
+	 * 
+	 * @return	mixed
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function createNewContact($email='',$password=''){
+        
+		if($email !== '' && $password !== '') {
+			return $this->client->setContact(array(
+                        						'email1' => $email,
+                        						'password_c' => $password
+        									)
+        								);
+        } else {
+        	return false;
+        }
+    } 
+	
+	/**
+	 * Get related notes from SugarCRM.
+	 * 
+	 * @param	string	$moduleName
+	 * @param	string	$moduleId
+	 * @param	array	$select_fields
+	 * 
+	 * @return	mixed	array if request-success
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getRelatedNotes($moduleName='', $moduleId='', $select_fields=array()) {
+		
+		if($moduleName !== '' && $moduleId !== '') {
+			$response = $this->client->call('get_related_notes', array(
+														$this->session_id,
+														$moduleName,
+														$moduleId,
+														$select_fields
+													)
+							);
+			return $response;
+		} else {
+			return false;
+		}
+	}
+	
+	/**
+	 * Get modified entries from SugarCRM.
+	 * 
+	 * @param	string	$module
+	 * @param	string	$ids
+	 * @param	array	$select_fields
+	 * 
+	 * @return	string	base64-decoded xml
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getModifiedEntries($module='', $ids='', array $select_fields) {
+
+		if($module !== '' && $ids !== '') {
+			$response = $this->client->call('get_modified_entries', array(
+																		$this->session_id,
+																		$module,
+																		$ids,
+																		$select_fields
+																	)
+											);
+			return base64_decode($response['result']);
+		} else {
+			return false;
+		}	
+	}
 	
     /**
-	 * Get an array-list of all available SugarCE-modules.
+	 * Get an array-list of all available SugarCRM-modules.
 	 * 
 	 * @return	array
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
@@ -384,16 +521,24 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	}
 	
 	/**
-	 * Get all fields of your module.
+	 * Get all existing fields of your given SugarCRM module name.
 	 * 
 	 * @param	string	$module
 	 * 
 	 * @return	array
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
-	public function getModuleFields($module) {
+	public function getModuleFields($module='') {
 		
-		return $this->client->call('get_module_fields',array($this->session_id,$module));
+		if ($module !== '') {
+			return $this->client->call('get_module_fields',array(
+																$this->session_id,
+																$module
+															)
+										);
+		} else {
+			return false;
+		}
 	}
 	
 	/**
@@ -413,15 +558,20 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 * 
 	 * @param	string	$contactId
 	 * 
-	 * @return	array
+	 * @return	mixed	array if request-success
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	public function getContactRelationships($contactId = '') {
 		
 		if($contactId != '') {
-			return $this->client->call('get_contact_relationships',array($this->user,$this->password,$contactId));
+			return $this->client->call('get_contact_relationships',array(
+																	$this->user,
+																	$this->password,
+																	$contactId
+																	)
+										);
 		} else {
-			/*var_dump('Sry, there is no authorisation available')*/;
+			return false;
 		}
 	}
 	

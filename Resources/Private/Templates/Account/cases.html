@@ -1,0 +1,65 @@
+<f:section name="content">
+	<f:if condition="{case}">
+		<f:link.action action="index" controller="Start" >User Profile</f:link.action>
+		<f:link.action action="cases" controller="Account" >Cases</f:link.action>
+		<f:link.action action="logout" controller="Start" >Logout</f:link.action>
+		<h3>Cases:</h3>
+		<hr>
+		<f:for each="{case.get}" as="record">
+			<dl>
+				<dt>
+					<b>Subject:</b>
+				</dt>
+				<dd>
+					{record.name}
+				</dd>
+				<dt>
+					<b>Description:</b>
+				</dt>
+				<dd>
+					{record.description}
+				</dd>
+				<dt>
+					<b>Case Number:</b>
+				</dt>
+				<dd>
+					{record.case_number}
+				</dd>
+			</dl>
+			<hr>
+		</f:for>
+		<h3>Add new Case:</h3>
+			<f:form method="post" controller="Account" action="cases" name="caseForm">
+				<dl>
+					<dt>
+						Priority:
+					</dt>
+					<dd>
+						<f:form.select value="Medium" name="priority:varchar" options="{P1: 'High', P2: 'Medium', P3: 'Low'}"/>
+					</dd>
+					<dt>
+						Type:
+					</dt>
+					<dd>
+						<f:form.select value="Product" name="type:varchar" options="{Administration: 'Administration', Product: 'Product', User: 'User'}"/>
+					</dd>
+					<dt>
+						Subject*:
+					</dt>
+					<dd>
+						<f:form.textbox value="{case.notValid.name.value}" name="name:varchar"/>
+						<b style="color:red;">{case.notValid.name.error}</b>
+					</dd>
+					<dt>
+						Description*:
+					</dt>
+					<dd>
+						<f:form.textarea value="{case.notValid.description.value}" name="description:varchar" rows="10" cols="45"/>
+						<b style="color:red;">{case.notValid.description.error}</b>
+					</dd>
+				</dl>
+				<f:form.submit value="Submit"/>
+			</f:form>
+	</f:if>
+</f:section>
+			

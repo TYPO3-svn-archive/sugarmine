@@ -34,6 +34,20 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	 * @var Tx_SugarMine_Domain_Repository_SugarsoapRepository
 	 */
 	protected $sugarsoapRepository;
+	
+	/**
+	 * SugarMines User-Profile Validator for submitted data from the frontend.
+	 * 
+	 * @var Tx_SugarMine_Domain_Validator_ProfileValidator
+	 */
+	protected $profileValidator;
+	
+	/**
+	 * SugarMines Case Validator for submitted data from the frontend.
+	 * 
+	 * @var Tx_SugarMine_Domain_Validator_CaseValidator
+	 */
+	protected $caseValidator;
 
 	/**
 	 * Initializes the current action.
@@ -43,28 +57,20 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	protected function initializeAction() {
 		
 		$this->sugarsoapRepository = t3lib_div::makeInstance('Tx_SugarMine_Domain_Repository_SugarsoapRepository');
+		$this->profileValidator = t3lib_div::makeInstance('Tx_SugarMine_Domain_Validator_ProfileValidator');
+		$this->caseValidator = t3lib_div::makeInstance('Tx_SugarMine_Domain_Validator_CaseValidator');
 	}
-	
-	/**
-	 * Index Action of AccountController.
-	 *
-	 * @return void
-	 * @author	Sebastian Stein <s.stein@netzelf.de>
-	 */
-	protected function indexAction() {
-		
-		 $this->forward('collect'); // collect data from session and setup.txt into one array
-	}
-	
+
 	/**
 	 * Collects and synchronizes data into an all-in-one-array for FLUID to display the user-profile form:
 	 * 
 	 * @return void
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
-	protected function collectAction() {
+	protected function indexAction() { //TODO: MAKE THIS AS INDEX ACTION
 		
 		var_dump('Controller: Account; Action: form');
+		//TODO: array collecting should be done into setupRepository
 		$contactData = $GLOBALS['TSFE']->fe_user->getKey('ses','authorizedUser'); // get $contactData from authorized session
 		//var_dump($contactData);
 		if ($contactData['authSystem'] == 'sugar') { // if authSystem is 'typo3', the appropriate password is already injected into $contactData:
@@ -73,6 +79,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 			
 		} 
 		
+		unset($contactData['data']['account_id']); // account_id is still stored into session
 		foreach($this->sugarsoapRepository->viewField as $name => $value) { // viewField and editField definitions are merged with field-values (contact data) from sugarcrm:
 			
 			if (array_key_exists($name, $contactData['data'])) {		 
@@ -93,7 +100,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 				if ($name == 't3_password') { // case: contact authentication via typo3-db-password
 					$DATA[$name] = array(
 										'value'=>$field2['value'],
-										'edit'=>$field2['edit'], 
+										'edit'=>false, // it is senseless to edit and submit a t3_password to SugarCRM. //TODO: this should be send to typo ;)
 										'field'=>array(
 											'name'=>$name,
 											'label'=>'T3_Password:',
@@ -138,13 +145,17 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 			}
 		} 
 		
+		if ($DATA['t3_password'] !== null) { // if the authentication runs against typo: a configured sugar password is senseless
+			unset($DATA[$this->sugarsoapRepository->passwField]);
+		}
+		
 		$DATA['id']['style'] = array('hidden'=>'hidden'); 
 		//var_dump($DATA);
 		
 		if(is_array($DATA)) {
 			
 			$GLOBALS['TSFE']->fe_user->setKey('ses','collectedData', $DATA);
-			$this->forward('form');
+			$this->forward('profile');
 			
 		} else {
 			var_dump('ERROR: No valid field configuration available');
@@ -152,111 +163,99 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 		}
 	}
 	
-	protected function formAction() {
+	/**
+	 * - Renders formatted contact-profile-form of an authorized SugarMine user
+	 * - Handles validation of posts from the user profile (with error-reporting) and passes the approved data to a setEntry() method,
+	 *   which finally calls the appropriate SugarCRM-WebService to update the records.
+	 * 
+	 * @return	string	the renderd view
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	protected function profileAction() {
 		
 		$DATA = $GLOBALS['TSFE']->fe_user->getKey('ses','collectedData');
 		//var_dump($DATA);
 		$this->view->assign('contact', $DATA);
 		
+		$post = t3lib_div::_POST();
+		
+		if (isset($post)) {
+			
+			$validFields = $this->profileValidator->isValid($post); // is array if is valid, else FALSE!
+		
+			$DATA = $GLOBALS['TSFE']->fe_user->getKey('ses','collectedData');
+		
+			if ($validFields === false) {
+			
+				unset($validFields);
+				//$GLOBALS['TSFE']->fe_user->setKey('ses','collectedData', $DATA);
+				$this->view->assign('contact', $DATA); //TODO: write an own template with error-report for current action
+			
+			} elseif ($validFields['validFields'][1] !== null) { // successful validation of more fields than just id as fixed value:
+			
+				// inject unchanged decrypted password into setEntry value list (it is absolutely necessary to submit an existing custom password as PLAIN-TEXT to SugarCRM)
+				// i donno why, but if you dont submit any custom password, it will get lost (shown as weird encryption on sugars frontend) and if you submit it ENcrypted, sugarcrm will ENcrypt it again and therefore destroy it. *NARF*
+				// this is why it has currently be send DEcrypted as plain text password :S
+				
+				if($validFields['passwChange'] !== true && $GLOBALS['TSFE']->fe_user->getKey('ses','authSystemWas') === 'Sugar') { 
+					
+					$validFields['validFields'][]= array(
+                        	'name'  =>      $this->sugarsoapRepository->passwField,
+                        	'value' =>      $DATA[$this->sugarsoapRepository->passwField]['value']  
+               			 );
+				}
+			
+				//$GLOBALS['TSFE']->fe_user->setKey('ses','collectedData', $DATA);
+				$this->sugarsoapRepository->setLogin();
+				$result = $this->sugarsoapRepository->setEntry('Contacts', $validFields['validFields']);
+				//var_dump($validFields);
+				
+				if ($result['error']['number'] === '0') { // case: no error reported from SugarCRM
+					$this->view->assign('contact', $DATA); // lets have a look at your fresh changes from SugarCRM
+					//TODO: it is faster, to report cached data, instead of refreshing from SugarCRM!! 
+				} else {
+					var_dump('sry, there was an unknown problem with SugarCRM');
+					var_dump($result); // shows reported results (including errors)
+					$this->view->assign('contact', $DATA);
+				}		
+			}
+		}
 	}
 	
 	/**
-	 * Handles validation of posts (with error-reporting) and passes the approved data to a setEntry() method,
-	 * which finally calls the appropriate SugarCRM-WebService to set new record-values.
-	 *
+	 * Shows case-list and newCase-form for an authorized SugarMine user.
+	 * 
+	 * @return	string	the renderd view
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
-	protected function saveAction() {
+	protected function casesAction() {
 		
-		var_dump('Controller: Account; Action: save');
-		$DATA = $GLOBALS['TSFE']->fe_user->getKey('ses','collectedData');
+		$this->sugarsoapRepository->setLogin();
+		$IDs = $GLOBALS['TSFE']->fe_user->getKey('ses', 'IDs');
+		$caseFields = $this->sugarsoapRepository->getCases($IDs['accountId']);
+		//var_dump($cases['entry_list'][0]);
+		$cases['get'] = $caseFields['entry_list'];
+		$this->view->assign('case', $cases);
+		
 		$post = t3lib_div::_POST();
-		
-		foreach ($post['tx_sugarmine_sugarmine'] as $name => $value) { // TODO: maybe its better to move this procedures to a validatorRepository
-			// pre-validation:
-			if($name !== '__hmac' && $name !== '__referrer' && $value !== null && $value !== '') {
-				
-				$field = explode(':',$name); 
-				$field[1] = ($name === 'id') ? 'id' : $field[1]; // hidden id field comes without type definition: create one
-				
-				switch($field[1]) {
-					case 'varchar': {
-						if ($field[0] === 'email1' || $field[0] === 'email2') {
-					
-							$valObj = t3lib_div::makeInstance('Tx_Extbase_Validation_Validator_EmailAddressValidator'); // this is useful, because its a quite long pattern!
-							$error = ($valObj->isvalid($value) === true) ? false : 'The given subject was not a valid email address.';
-				
-						} else {
-							$error = (is_string($value)) ? false : 'The given text was not a valid string.';
-						}
-					} break;
-					case 'encrypt': { // at this point, the value is still DEcrypted
-						$error = (is_string($value)) ? false : 'The given text was not a valid string.';
-						$passwChange = ($field[0] === $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['passwField']) ? true : null;
-					} break;
-					case 'enum': {
-						$error = (is_string($value)) ? false : 'The given option was not a valid string.';
-					} break;
-					case 'phone': {
-						$error = (!preg_match('~[^-\s\d./()+]~', $value)) ? false : 'The given phone-number seems not to be a valid one';
-					} break;
-					case 'id': { 
-						$error = (!preg_match('~[^a-z0-9-]~', $value)) ? false : 'Fatal error: contact-id is not valid!'; 
-						if (is_string($error)) { //this is a fatal exception error that redirects to logout action!
-							var_dump($error);
-							$this->redirect('logout', 'Start');
-						}
-					} break;
-					default: $error = 'validator: field type is currently unknown';
-				}
-				
-				if ($error === false) {
-				
-					 $validFields[]= array(
-                        'name'  =>      $field[0],
-                        'value' =>      $value  
-               		 );
-					$DATA[$field[0]]['error'] = null; // delete existing error from data array
-				
-				} elseif (is_string($error)) {
-				
-					$DATA[$field[0]]['error'] = $error; // catch and store error
-					$errorFlag = true; // set error flag
-					
-				}
-			}
-		}
-
-		if ($errorFlag === true) {
-			
-			unset($validFields);
-			$GLOBALS['TSFE']->fe_user->setKey('ses','collectedData', $DATA);
-			$this->redirect('form'); //TODO: write an own template with error-report
-			
-		} elseif ($validFields[1] !== null) { // successful validation of more fields than just id as fixed value:
-			
-			// inject unchanged decrypted password into setEntry value list (it is absolutely necessary to submit an existing custom password as PLAIN-TEXT to SugarCRM)
-			// i donno why, but if you dont submit any custom password, it will get lost (shown as weird encryption on sugars frontend) and if you submit it ENcrypted, sugarcrm will ENcrypt it again and therefore destroy it. *NARF*
-			// this is why it has currently be send DEcrypted as plain text password :S
-			if($passwChange !== true && $GLOBALS['TSFE']->fe_user->getKey('ses','authSystemWas') === 'Sugar') { 
-				$validFields[]= array(
-                        'name'  =>      $this->sugarsoapRepository->passwField,
-                        'value' =>      $DATA[$this->sugarsoapRepository->passwField]['value']  
-               		 );
-			}
-			
-			$GLOBALS['TSFE']->fe_user->setKey('ses','collectedData', $DATA);
+		$result = $this->caseValidator->isValid($post);
+		if (array_key_exists('notValid',$result)) {
+			$cases['notValid'] = $result['notValid'];
+			//var_dump($cases);
+			$this->view->assign('case', $cases);
+		} elseif (is_array($result)) {
+			$keyCount = count($result); // add account_id to submitted array (necessary for SugarCRM)
+			$result[$keyCount] = array(
+									'name' => 'account_id',
+									'value' => $IDs['accountId']
+									);
 			$this->sugarsoapRepository->setLogin();
-			$result = $this->sugarsoapRepository->setEntry('Contacts', $validFields);
-			//var_dump($validFields);
-			
-			if ($result['error']['number'] === '0') { // case: no error reported from SugarCRM
-				$this->redirect('refresh', 'Start'); // lets have a look at your fresh changes from SugarCRM
-			} else {
-				var_dump('sry, there was an unknown problem with SugarCRM');
-				var_dump($result); // shows reported results (including errors)
-				$this->redirect('form');
-			}		
+			$response = $this->sugarsoapRepository->setEntry('Cases', $result);
+			unset($result);
+			unset($post);
+			$caseFields = $this->sugarsoapRepository->getCases($IDs['accountId']);
+			$cases['get'] = $caseFields['entry_list'];
+			$this->view->assign('case', $cases);
 		}
 	}
 	

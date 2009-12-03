@@ -1,7 +1,7 @@
-The next following lines describe an exemplary additional content of:
-"typo3conf/localconf.php"
+##############################################################################################
+exemplary additional content of: "typo3conf/localconf.php"
 
-Note, that it is necessary to define these vars for SugarMine!!!
+Note, that it is absolutely necessary to define these following variables for SugarMine:
 
 // sugarCRM setup for sugarmine extension:
 $TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['sugar']['url'] = 'http://127.0.0.1/sugarce';
@@ -14,3 +14,87 @@ $TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['auth']['t3DummyUserName'] = 't
 $TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['auth']['temp'] = null;
 $TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['auth']['system'] = 'both'; // 'typo3', 'sugar' or 'both'
 $TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['auth']['logoutURI'] = 'index.php?id=2';
+
+
+##############################################################################################
+exemplary additional content of: "typo3conf/ext/sugar_mine/Configuration/TypoScript/setup.txt"
+
+Field list of CONTACT module on SugarCRM database:
+
+  'assigned_user_name'
+  'modified_by_name'
+  'created_by_name'
+  'id'
+  'date_entered'
+  'date_modified'
+  'modified_user_id'
+  'created_by'
+  'description'
+  'deleted'
+  'assigned_user_id'
+  'salutation'
+  'first_name'
+  'last_name'
+  'title'
+  'department'
+  'do_not_call'
+  'phone_home'
+  'phone_mobile'
+  'phone_work'
+  'phone_other'
+  'phone_fax'
+  'email1'
+  'email2'
+  'primary_address_street'
+  'primary_address_city'
+  'primary_address_state'
+  'primary_address_postalcode'
+  'primary_address_country'
+  'alt_address_street'
+  'alt_address_city'
+  'alt_address_state'
+  'alt_address_postalcode'
+  'alt_address_country'
+  'assistant'
+  'assistant_phone'
+  'lead_source'
+  'account_name'
+  'account_id'
+  'opportunity_role_fields'
+  'reports_to_id'
+  'report_to_name'
+  'birthdate'
+  'portal_name'
+  'portal_active'
+  'portal_app'
+  'campaign_id'
+  'campaign_name'
+  'c_accept_status_fields'
+  'm_accept_status_fields'
+  'yourcustomfield_c'
+
+Field list of CASES module on SugarCRM database:
+ 
+  'assigned_user_name'
+  'modified_by_name'
+  'created_by_name'
+  'id'
+  'name'
+  'date_entered'
+  'date_modified'
+  'modified_user_id'
+  'created_by'
+  'description'
+  'deleted'
+  'assigned_user_id'
+  'case_number'
+  'type'
+  'status'
+  'priority'
+  'resolution'
+  'work_log'
+  'account_name'
+  'account_id'
+
+Field list of ACCOUNT module on SugarCRM database:
+

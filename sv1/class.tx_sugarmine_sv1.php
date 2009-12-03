@@ -122,7 +122,7 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 	 *
 	 * @return	boolean
 	 */
-	function init()	{	//TODO: Error messages!
+	function init()	{	//TODO: flash-error messages!
 		//$this->writeDevLog = TRUE;
 		// init service-configuration from typos global localconf:
 		$this->soapUrl = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['url'];
@@ -135,12 +135,12 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 		$available = false;
 		if ($this->authSystem == 'sugar' || $this->authSystem == 'both') {
 			if($this->soapUrl != '' && $this->user != '' && $this->passw != '' && $this->passwField != '' && $this->passwKey != '' && $this->dummy != '') {
-				var_dump('SERVICE_INIT: OK');
+				var_dump('SERVICE_INIT: SUGAR OR BOTH');
 				$available = parent::init();
 			}
 		} elseif ($this->authSystem == 'typo3') {
 			if ($this->soapUrl != '' && $this->user != '' && $this->passw != '') {
-				var_dump('SERVICE_INIT: OK');
+				var_dump('SERVICE_INIT: TYPO3');
 				$available = parent::init();
 			}
 		} return $available;
@@ -211,7 +211,7 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 	 * @return	mixed	user array or false
 	 */
 	function getUser() {
-		
+
 		$user = false;
 		if ($this->login['status']=='login' && $this->login['uident'])	{
 			
@@ -228,7 +228,7 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 
 				// evaluation of sugars response:
 				if(is_array($result)) {
-
+					
 					$user = $this->fetchUserRecord($this->dummy);
 					// maps authenticated login-data over the current fe_user (defined by a global var: $this->dummy):
 					$user['username'] = $this->login['uname'];
@@ -332,7 +332,6 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 			$matches = $this->getEntryList('Contacts',$mailQuery,'',0,$fields=array(),0,0);
 			#delete the 2nd or-condition, if only the primary email address should be valid:
 			if($matches[0]['email1'] == $emailAddr OR $matches[0]['email2'] == $emailAddr) {
-				//var_dump($matches);
 				return array('authSystem'=>'sugar', 'source'=>$SOURCE, 'data'=>$matches[0], 'fields'=>$matches['field_list']);
 			}
 			else {
