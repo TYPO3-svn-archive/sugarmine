@@ -1,14 +1,12 @@
 <f:section name="content">
-	<f:if condition="{contact}">
-		<f:link.action action="refresh" controller="Start" >Refresh</f:link.action>
-		<f:link.action action="company" controller="Account" >Company</f:link.action>
+	<f:if condition="{company}">
+		<f:link.action action="profile" controller="Account" >User Profile</f:link.action>
 		<f:link.action action="cases" controller="Account" >Cases</f:link.action>
 		<f:link.action action="logout" controller="Start" >Logout</f:link.action>
-		<h2>Welcome to our Support Center {contact.salutation.value} "{contact.first_name.value} {contact.last_name.value}"</h2>
-		<h3>User profile:</h3>
-		<f:form method="post" controller="Account" action="profile" name="contactForm">
+		<h3>Account Data:</h3>
+		<f:form method="post" controller="Account" action="company" name="companyForm">
 			<dl>
-				<f:for each="{contact}" as="record">
+				<f:for each="{company}" as="record">
 					<f:if condition="{record.edit}"> <!--only editable and visible fields are shown via form-elements-->	
 						<f:then>
 							<dt>

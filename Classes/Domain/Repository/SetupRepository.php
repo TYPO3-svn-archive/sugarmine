@@ -3,7 +3,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+*  (c) 2009 Sebastian Stein <sebastian.stein@netzelf.de>
 *  All rights reserved
 *
 *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -28,10 +28,11 @@
  *
  * @package TYPO3
  * @subpackage SugarMine
+ * @author	Sebastian Stein <s.stein@netzelf.de>
  */
 class Tx_SugarMine_Domain_Repository_SetupRepository extends Tx_Extbase_Persistence_Repository {
 
-		/**
+    /**
 	 * @var string
 	 */
 	private $pathDelimiter = '.';

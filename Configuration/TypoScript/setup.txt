@@ -1,7 +1,7 @@
- # Plugin configuration
+ # SugarMine Plugin configuration
 plugin.tx_sugarmine {
 	sugar {
-		contacts {
+		contact {
 			viewableFields {
 				salutation = 1
 				first_name = 1
@@ -15,8 +15,11 @@ plugin.tx_sugarmine {
 				email2 = 1
 				password_c = 1
 				t3_password = 1
+				primary_address_postalcode = 1
+				description = 1
+				date_modified = 1
 			}
-				editableFields {
+			editableFields {
 				salutation = 1
 				first_name = 1
 				last_name = 1
@@ -29,11 +32,32 @@ plugin.tx_sugarmine {
 				email2 = 1
 				password_c = 1
 				t3_password = 1
+				primary_address_postalcode = 1
+				description = 1
+				date_modified = 1
 			}
 		}
-		cases {
+		company {
 			viewableFields {
-				
+				name = 1
+				description = 1
+				industry = 1
+				website = 1
+				phone_fax = 1
+  				billing_address_street = 1
+  				billing_address_city = 1
+  				billing_address_state = 1
+  				billing_address_postalcode = 1
+  				billing_address_country = 1
 			}
+			editableFields {
+				name = 
+				description = 1
+				industry = 1
+				phone_fax = 1
+				billing_address_postalcode = 0
+				website = 1
+			}
+		}
 	}
 }

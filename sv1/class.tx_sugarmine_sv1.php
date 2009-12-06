@@ -292,10 +292,11 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 		}
 		// define authentication-array
 		$auth_array = array(
-   			'user_auth' => array(
-     		'user_name' => $this->user,
-     		'password' => md5($this->passw),
-   			));
+   						'user_auth' => array(
+     									'user_name' => $this->user,
+     									'password' => md5($this->passw),
+										)
+						);
   		$login_results = $this->client->call('login',$auth_array); // call the login service
   		$this->session_id = $login_results['id']; // store the session_id
 	}
@@ -308,7 +309,17 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 	 */
 	private function getSugarContact() {
 
-		$SOURCE = 'Contacts'; // TODO: should be defined in typos localconf.php!!!!!!
+		$SOURCE = 'contact'; // FIXME: its only an approach, works only with auth against contacts and should be defined in typos localconf.php as source var!!!!!!
+		switch($SOURCE) {
+			case 'contact': {
+				$module = 'Contacts';
+				$table = 'contacts';
+			} break;
+			case 'account': {
+				$module = 'Accounts';
+				$table = 'accounts';
+			}
+		}
 		
 		$emailAddr = trim($this->login['uname']);
 		$password = trim($this->login['uident']);
@@ -323,16 +334,23 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 		$password = base64_encode($encrPass); // encrypted and encoded password
 		
 		#if there is a matching password, there will be an user id field-value in your custom table ..
-		$passQuery = 'contacts_cstm.'.$this->passwField.'="'.$password.'"';
-		$matches = $this->getEntryList('Contacts',$passQuery,'',0,$fields=array(),0,0);
-		$contactId = $matches[0]['id']; // pick user id
-		if(!empty($contactId)) {
+		$passQuery = $table.'_cstm.'.$this->passwField.'="'.$password.'"';
+		$matches = $this->getEntryList($module,$passQuery,'',0,$fields=array(),0,0);
+		$Id = $matches[0]['id']; // pick user id
+		if(!empty($Id)) {
 			#with that user-id you can get your unique contact data and compare the email addresses
-			$mailQuery = 'contacts.id="'.$contactId.'"';
-			$matches = $this->getEntryList('Contacts',$mailQuery,'',0,$fields=array(),0,0);
+			$mailQuery = $table.'.id="'.$Id.'"';
+			$matches = $this->getEntryList($module,$mailQuery,'',0,$fields=array(),0,0);
 			#delete the 2nd or-condition, if only the primary email address should be valid:
 			if($matches[0]['email1'] == $emailAddr OR $matches[0]['email2'] == $emailAddr) {
-				return array('authSystem'=>'sugar', 'source'=>$SOURCE, 'data'=>$matches[0], 'fields'=>$matches['field_list']);
+				return array(
+							'authSystem'=>'sugar',
+							'source'=>$SOURCE, 
+							$SOURCE=>array(
+											'data'=>$matches[0], 
+											'fields'=>$matches['field_list']
+										)
+						);
 			}
 			else {
 				return false;

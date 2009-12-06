@@ -1,12 +1,12 @@
 <f:section name="content">
 	<f:if condition="{case}">
-		<f:link.action action="index" controller="Start" >User Profile</f:link.action>
-		<f:link.action action="cases" controller="Account" >Cases</f:link.action>
+		<f:link.action action="profile" controller="Account" >User Profile</f:link.action>
+		<f:link.action action="company" controller="Account" >Company</f:link.action>
 		<f:link.action action="logout" controller="Start" >Logout</f:link.action>
 		<h3>Cases:</h3>
 		<hr>
-		<f:for each="{case.get}" as="record">
-			<dl>
+		<dl>
+			<f:for each="{case.get}" as="record">
 				<dt>
 					<b>Subject:</b>
 				</dt>
@@ -25,9 +25,9 @@
 				<dd>
 					{record.case_number}
 				</dd>
-			</dl>
-			<hr>
-		</f:for>
+				<hr>
+			</f:for>
+		</dl>
 		<h3>Add new Case:</h3>
 			<f:form method="post" controller="Account" action="cases" name="caseForm">
 				<dl>

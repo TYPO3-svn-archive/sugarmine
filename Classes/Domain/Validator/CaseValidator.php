@@ -26,15 +26,17 @@
 ***************************************************************/
 
 /**
- * An Case Validator:
+ * A Validator for new SugarCRM Cases:
  *
  * @scope singleton
+ * @package TYPO3
+ * @subpackage SugarMine
  * @author	Sebastian Stein <s.stein@netzelf.de>
  */
 class Tx_SugarMine_Domain_Validator_CaseValidator extends Tx_Extbase_Validation_Validator_AbstractValidator {
 	
 	/**
-	 * Validate the given post of the case form.
+	 * Validate the given post.
 	 *
 	 * @param	array	$post	post data array submitted from a fluid template
 	 * @return	array	
@@ -46,6 +48,7 @@ class Tx_SugarMine_Domain_Validator_CaseValidator extends Tx_Extbase_Validation_
 			if($name !== '__hmac' && $name !== '__referrer') {
 				
 				$field = explode(':',$name);
+				$value = trim($value);
 				
 				if($value === null || $value === '') {
 					$error = 'this field must be filled out';
@@ -74,12 +77,8 @@ class Tx_SugarMine_Domain_Validator_CaseValidator extends Tx_Extbase_Validation_
 				}
 			}
 		}
-		if ($errorFlag === true) {
-			return $Fields;
-		} else {
-			return $validFields;
-		}
 		
+		return $return = ($errorFlag === true) ? $Fields : $validFields;	
 	}
 }
 ?>

@@ -1,7 +1,7 @@
 <?php
 
 ########################################################################
-# Extension Manager/Repository config file for ext "sugarmine".
+# Extension Manager/Repository config file for ext "sugar_mine".
 #
 # Auto generated 06-11-2009 21:30
 #
@@ -12,7 +12,7 @@
 
 $EM_CONF[$_EXTKEY] = array(
 	'title' => 'SugarCRM/Redmine-Interface',
-	'description' => 'Customer-center as FE-Plugin (incl. auth-service) with connection to SugarCRM and Redmine',
+	'description' => 'Customer-center as FE-Plugin (incl. t3auth-service) with connection to SugarCRM and Redmine',
 	'category' => 'plugin',
 	'shy' => 0,
 	'version' => '0.0.1',
@@ -27,7 +27,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'modify_tables' => '',
 	'clearcacheonload' => 1,
 	'lockType' => '',
-	'author' => '',
+	'author' => 'Sebastian Stein',
 	'author_email' => 'sebastian.stein@netzelf.de',
 	'author_company' => 'Netzelf',
 	'CGLcompliance' => '',
