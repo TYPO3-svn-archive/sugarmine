@@ -37,6 +37,14 @@ plugin.tx_sugarmine {
 				date_modified = 1
 			}
 		}
+		case {
+			viewableFields {
+				name = 1
+				description = 1
+				case_number = 1
+				status = 1
+			}
+		}
 		company {
 			viewableFields {
 				name = 1

@@ -57,7 +57,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	
 	/**
 	 * 
-	 * @var Tx_SugarMine_Domain_Validator_CompanyValidator	SugarMines Company (SugarCRM: "account") Validator for submitted data from company form.
+	 * @var Tx_SugarMine_Domain_Validator_CompanyValidator	SugarMines Company (SugarCRM: "Account") Validator for submitted data from company form.
 	 */
 	protected $companyValidator;
 
@@ -162,7 +162,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 					$this->view->assign('contact', $RENDER['profile']);
 				}		
 			}
-		}
+		}//var_dump($RENDER['profile']);
 	}
 	
 	/**
@@ -184,8 +184,6 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 			if (array_key_exists('notValid',$result)) {
 			
 				$cases['notValid'] = $result['notValid'];
-				//var_dump($cases);
-				$this->view->assign('case', $cases); // show template with new values and errors
 		
 			} elseif (is_array($result)) {
 			
@@ -201,8 +199,11 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 			}
 		}
 		$caseFields = $this->sugarsoapRepository->getCases($IDs['accountId']); // refresh cases-list
-		$cases['get'] = $caseFields['entry_list'];
-		$this->view->assign('case', $cases);
+		$cases['get'] = $caseFields['entry_list'];	
+		
+		$cases['get'] = $this->accountRepository->prepareCasesForFluid($caseFields['field_list'],$cases['get']);
+
+		$this->view->assign('cases', $cases);
 	}
 	
 	/**

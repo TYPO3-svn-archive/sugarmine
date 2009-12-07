@@ -1,16 +1,16 @@
 <f:section name="content">
 	<f:if condition="{company}">
-		<f:link.action action="profile" controller="Account" >User Profile</f:link.action>
-		<f:link.action action="cases" controller="Account" >Cases</f:link.action>
-		<f:link.action action="logout" controller="Start" >Logout</f:link.action>
-		<h3>Account Data:</h3>
+		<f:link.action action="profile" controller="Account" ><f:translate key="Profile">User Profile</f:translate></f:link.action> |
+		<f:link.action action="cases" controller="Account" ><f:translate key="Cases">Cases</f:translate></f:link.action> |
+		<f:link.action action="logout" controller="Start" ><f:translate key="Logout">Logout</f:translate></f:link.action>
+		<h3><f:translate key="Company">Account</f:translate>:</h3>
 		<f:form method="post" controller="Account" action="company" name="companyForm">
 			<dl>
 				<f:for each="{company}" as="record">
 					<f:if condition="{record.edit}"> <!--only editable and visible fields are shown via form-elements-->	
 						<f:then>
 							<dt>
-								<label for="textboxLabel">{record.field.label}</label> <!--TODO: introduce a language marker-->
+								<b><f:translate key="{record.field.label}">{record.field.label}</f:translate></b>
         					</dt>
 							<dd>
 								<f:if condition="{record.field.textbox}"> <!-- in this case[s]: use textbox-viewhelper strictly -->
@@ -55,7 +55,7 @@
 								</f:then>
 								<f:else>
 									<dt>
-										<label for="textboxLabel">{record.field.label}</label> <!--TODO: introduce a language marker-->
+										<b><f:translate key="{record.field.label}">{record.field.label}</f:translate></b>
         							</dt>
 									<dd>
 										{record.value}

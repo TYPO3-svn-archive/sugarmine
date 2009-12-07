@@ -1,61 +1,51 @@
 <f:section name="content">
-	<f:if condition="{case}">
-		<f:link.action action="profile" controller="Account" >User Profile</f:link.action>
-		<f:link.action action="company" controller="Account" >Company</f:link.action>
-		<f:link.action action="logout" controller="Start" >Logout</f:link.action>
-		<h3>Cases:</h3>
+	<f:if condition="{cases}">
+		<f:link.action action="profile" controller="Account" ><f:translate key="Profile">User Profile</f:translate></f:link.action> |
+		<f:link.action action="company" controller="Account" ><f:translate key="Company">Account</f:translate></f:link.action> |
+		<f:link.action action="logout" controller="Start" ><f:translate key="Logout">Logout</f:translate></f:link.action>
+		<h3><f:translate key="Cases">Cases</f:translate>:</h3>
 		<hr>
 		<dl>
-			<f:for each="{case.get}" as="record">
-				<dt>
-					<b>Subject:</b>
-				</dt>
-				<dd>
-					{record.name}
-				</dd>
-				<dt>
-					<b>Description:</b>
-				</dt>
-				<dd>
-					{record.description}
-				</dd>
-				<dt>
-					<b>Case Number:</b>
-				</dt>
-				<dd>
-					{record.case_number}
-				</dd>
+			<f:for each="{cases.get}" as="case">
+				<f:for each="{case}" as="field">
+					<dt>
+						<b><f:translate key="{field.label}">{field.label}</f:translate></b>
+					</dt>
+					<dd>
+						{field.value}
+					</dd>
+				</f:for>
 				<hr>
 			</f:for>
 		</dl>
-		<h3>Add new Case:</h3>
+		<h3><f:translate key="Add new Case:">Add new Case:</f:translate></h3>
 			<f:form method="post" controller="Account" action="cases" name="caseForm">
 				<dl>
 					<dt>
-						Priority:
+						<b><f:translate key="Priority:">Priority:</f:translate></b>
 					</dt>
 					<dd>
 						<f:form.select value="Medium" name="priority:varchar" options="{P1: 'High', P2: 'Medium', P3: 'Low'}"/>
 					</dd>
 					<dt>
-						Type:
+						<b><f:translate key="Type">Type</f:translate></b>
 					</dt>
 					<dd>
 						<f:form.select value="Product" name="type:varchar" options="{Administration: 'Administration', Product: 'Product', User: 'User'}"/>
 					</dd>
 					<dt>
-						Subject*:
+						<b><f:translate key="Subject:">Subject:</f:translate>*</b>
 					</dt>
 					<dd>
-						<f:form.textbox value="{case.notValid.name.value}" name="name:varchar"/>
-						<b style="color:red;">{case.notValid.name.error}</b>
+						<f:form.textbox value="{cases.notValid.name.value}" name="name:varchar"/>
+						<b style="color:red;">{cases.notValid.name.error}</b>
 					</dd>
 					<dt>
-						Description*:
+						<b><f:translate key="Description:">Description:</f:translate>*</b>
 					</dt>
 					<dd>
-						<f:form.textarea value="{case.notValid.description.value}" name="description:varchar" rows="10" cols="45"/>
-						<b style="color:red;">{case.notValid.description.error}</b>
+						<f:form.textarea value="{cases.notValid.description.value}" name="description:varchar" rows="10" cols="45"/>
+						<b style="color:red;">{cases.notValid.description.error}</b>
 					</dd>
 				</dl>
 				<f:form.submit value="Submit"/>

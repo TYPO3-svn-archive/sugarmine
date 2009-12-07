@@ -59,7 +59,7 @@ class Tx_SugarMine_Domain_Repository_AccountRepository extends Tx_Extbase_Persis
 	}
 	
 	/**
-	 * Combines contact data and contact field conf into one array for FLUID.
+	 * Combines contact data and contact field conf into one array for fluid.
 	 * 
 	 * @param	array	$contactData['fields']
 	 * @param	array	$fieldConf
@@ -127,6 +127,40 @@ class Tx_SugarMine_Domain_Repository_AccountRepository extends Tx_Extbase_Persis
 									options	(array)
 										name=>'value'
 										...  		*/
+	}
+	
+	/**
+	 * Combines case values and case labels into one array for fluid.
+	 * 
+	 * @param	array	$caseFields
+	 * @param	array	$cases
+	 * @return	array
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function prepareCasesForFluid($caseFields, $cases){
+		
+		foreach ($caseFields as $field) {
+		$count = 0;
+			foreach ($cases as $case) {
+				
+				if(array_key_exists($field['name'], $case)) {
+				
+				$array[$count][$field['name']] = array(
+													'label'=>$field['label'],
+													'value'=>$case[$field['name']]
+												);
+				}
+				 $count++;
+			}
+		}
+		return $array; /*$array =	0   (array)
+											field-name	(array)
+													label	(string)
+													value	(string)
+											...
+									1	(array)
+									...							*/
+		
 	}
 	
 }

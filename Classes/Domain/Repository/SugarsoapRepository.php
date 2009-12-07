@@ -111,6 +111,12 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	public $companyFields = '';
 	
 	/**
+	 *  
+	 * @var array	Containst field configuration (only VIEW!!!) of case fields from setup.txt.
+	 */
+	public $caseFields = '';
+	
+	/**
 	 * Constructor of SugarsoapRepository: calls soapclient and loads global extension-vars.
 	 * 
 	 * @return	void
@@ -122,14 +128,14 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 			
 			$this->contactFields['view'] = $this->setup->getValue('sugar.contact.viewableFields.');
 			$this->contactFields['edit'] = $this->setup->getValue('sugar.contact.editableFields.');
+			$this->companyFields['view'] = $this->setup->getValue('sugar.company.viewableFields.');
+			$this->companyFields['edit'] = $this->setup->getValue('sugar.company.editableFields.');
+			$this->caseFields['view'] = $this->setup->getValue('sugar.case.viewableFields.'); //TODO: may a user change existing cases on SugarCRM!?? its a little bit absurd
 			
 			$this->contactFields['view']['id'] = 1;
 			$this->contactFields['view']['account_id'] = 1;
 			$this->contactFields['edit']['id'] = null;
 			$this->contactFields['edit']['account_id'] = null;
-			
-			$this->companyFields['view'] = $this->setup->getValue('sugar.company.viewableFields.');
-			$this->companyFields['edit'] = $this->setup->getValue('sugar.company.editableFields.');
 			$this->companyFields['view']['id'] = 1;
 			$this->companyFields['edit']['id'] = null;
 
@@ -366,7 +372,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		}
 
 		$query = $table.'.account_id="'.$accountId.'"';
-		$matches = $this->getEntryList($module,$query,'',0,$selected_fields = array(),0,0);
+		$matches = $this->getEntryList($module,$query,'',0,$selected_fields = array_keys($this->caseFields['view']),0,0);
 
 		if(is_array($matches)) {
 			
