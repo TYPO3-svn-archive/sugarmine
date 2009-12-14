@@ -36,22 +36,67 @@ class Tx_SugarMine_Domain_Repository_AccountRepository extends Tx_Extbase_Persis
 	 * 
 	 * @param	array	$moduleData	associative array
 	 * @param	array	$viewField	associative array
-	 * @param	array	$editField	associative array
+	 * @param	array	$alterField	associative array
 	 * 
 	 * @return	array
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
-	public function mergeModuleDataWithFieldConf ($moduleData, $viewField, $editField) {
+	public function mergeModuleDataWithFieldConfNew ($moduleData, $viewFieldConf, $alterFieldConf) {
 		
-		foreach($viewField as $name => $value) { // viewField and editField definitions are merged with field-values (contact data) from sugarcrm:
-			
-			if (array_key_exists($name, $moduleData)) {		 
-				
-				if ($value == 1 && $editField[$name] != 1) {
-					$fieldConf[$name] = array('value'=>$moduleData[$name],'edit'=>false);
-						
-				} elseif ($value == 1 && $editField[$name] == 1) {
-					$fieldConf[$name] = array('value'=>$moduleData[$name],'edit'=>true);
+		$viewFields = explode(',', $viewFieldConf['fields']);
+
+		$alterFields = explode(',', $alterFieldConf['fields']);
+
+		if(!empty($viewFieldConf['fieldSets.'])) {
+			$viewFields[] = array('fieldset'=>$viewFieldConf['fieldSets.']);
+		}
+		if(!empty($alterFieldConf['fieldSets.'])) {
+			$alterFields[] = array('fieldset'=>$alterFieldConf['fieldSets.']);
+		}
+		
+
+		foreach($viewFields as $id => $name)  {
+			$name = trim($name);
+			if(!is_array($viewFields[$id]['fieldset'])) { // case: ordinary field found
+				if (array_key_exists($name, $moduleData)) {
+					$fieldConf[$name] = array('value'=>$moduleData[$name],'alter'=>false);
+					
+				}
+			} else { // case: fieldset found
+				foreach($viewFields[$id]['fieldset'] as $fieldset => $fields) { // fetch fieldsets
+					$fieldset = trim($fieldset,'.');
+					$viewFieldsetFields = explode(',', $fields['fields']); // explode field names
+					foreach ($viewFieldsetFields as $id2 => $name2) { // fetch fieldnames
+						$name2 = trim($name2);
+						if (array_key_exists($name2, $moduleData)) { // compare fieldnames with module data from SugarCRM and combine data
+							$fieldConf[$fieldset]['fields'][$name2] = array('value'=>$moduleData[$name2],'alter'=>false);
+							$fieldConf[$fieldset]['legend'] = $fields['legend'];
+							$fieldConf[$fieldset]['fieldset'] = true;
+						}
+					}
+				}
+			}
+		}
+		
+		// alterable fields are master fields (if field is alterable, no viewable field is necessary)
+		foreach($alterFields as $id => $name)  { // to the same checks with alterable fields and overwrite, if necessary
+			$name = trim($name);
+			if(!is_array($alterFields[$id]['fieldset'])) {
+				if (array_key_exists($name, $moduleData)) {
+					$fieldConf[$name] = array('value'=>$moduleData[$name],'alter'=>true);
+				}
+			} else {
+				foreach($alterFields[$id]['fieldset'] as $fieldset => $fields) {
+					$fieldset = trim($fieldset,'.');
+					$alterFieldsetFields = explode(',', $fields['fields']);
+					foreach ($alterFieldsetFields as $id2 => $name2) {
+						$name2 = trim($name2);
+						if (array_key_exists($name2, $moduleData)) {
+							$fieldConf[$fieldset]['fields'][$name2] = array('value'=>$moduleData[$name2],'alter'=>true);
+							$fieldConf[$fieldset]['legend'] = $fields['legend'];
+							$fieldConf[$fieldset]['fieldset'] = true;
+						}
+					}
 				}
 			}
 		}
@@ -61,108 +106,116 @@ class Tx_SugarMine_Domain_Repository_AccountRepository extends Tx_Extbase_Persis
 	/**
 	 * Combines contact data and contact field conf into one array for fluid.
 	 * 
-	 * @param	array	$contactData['fields']
-	 * @param	array	$fieldConf
+	 * @param	array	$fieldTypes	from SugarCRM
+	 * @param	array	$fieldConf	from setup.txt with values from SugarCRM
+	 * @param	string	$recordId	unique id of given module record
 	 * 
 	 * @return	array	combined data array
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
-	public function prepareForFluid ($contactData, $fieldConf) {
+	public function prepareForFluidNew ($fieldTypes, $fieldConf, $recordId) {
 		
-		foreach ($contactData as $id => $field) {	// $contactData['fields'] is an array with database-field-information
-				
+		foreach ($fieldTypes as $id => $field) {	// $contactData['fields'] is an array with database-field-information
+
 			foreach ($fieldConf as $name => $field2) { // $field2: is an array that contains all values and information about visibility and changeability of $name
 
-				if ($name == 't3_password') { // case: contact authentication was against a typo3-db-password
-					$DATA[$name] = array(
-										'value'=>$field2['value'],
-										'edit'=>false, // it is senseless to edit and submit a t3_password to SugarCRM. //TODO: this should be send to typo: SOLUTION: unique top key name and separate submit button outside the foreach loop
-										'field'=>array(
-											'name'=>$name,
-											'label'=>'T3_Password:',
-											'type'=>array(
-												'encrypt'=>true,
-												'name'=>'encrypt'
-											)
-										)
-									);
-					continue; //if condition is true: write special array field and start next foreach loop
-				}
-				if($name == $field['name']) {
-					######################FLUID-PREPARATION######################
-					if($field['type'] == 'enum') { 					// prepare for fluids options-attribute of viewHelper: <f:form.select/>
-						foreach($field['options'] as $key) {		// options (array)		--->	options (array)
-							$temp[$key['name']] = $key['value'];	//		key (array)		--->		name=>'value'
-						} 											//			name (array)
-						$field['options'] = $temp;					//				value (string)
-					} 		
+				if($field2['fieldset'] !== true) { // CASE: normal field
 					
-					$field['textbox'] = ($field['type'] === 'varchar' || $field['type'] === 'phone' || $field['type'] === 'bool' || $field['type'] === 'datetime' || $field['type'] === 'relate' || $field['type'] === 'assigned_user_name'  || $field['type'] === 'name') ? true: null;
+					if ($name == 't3_password') { // case: contact authentication was against a typo3-db-password
+						$DATA['fieldRecords'][$name] = array(
+													'value'=>$field2['value'],
+													'alter'=>false, // it is senseless to edit and submit a t3_password to SugarCRM. //TODO: this should be send to typo: SOLUTION: unique top key name and separate submit button outside the foreach loop
+													'field'=>array(
+														'name'=>$name,
+														'label'=>'T3_Password:',
+														'type'=>array(
+															'encrypt'=>true,
+															'name'=>'encrypt'
+																),
+														'textBox'=>$textBox	
+															)
+														);
+						continue; //if condition is true: write special array field and start next foreach loop
+					}
+					if($name == $field['name']) {
+						######################FLUID-PREPARATION######################
+						
+								if($field['type'] == 'enum') { 					// prepare for fluids options-attribute of viewHelper: <f:form.select/>
+									foreach($field['options'] as $key) {		// options (array)		--->	options (array)
+										$temp[$key['name']] = $key['value'];	//		key (array)		--->		name=>'value'
+									} 											//			name (array)
+									$field['options'] = $temp;					//				value (string)
+								}
+								//$DATA['fieldTypes'][$field['name']] = $field; 		
+							
+							
+							$fieldType = array(  
+												$field['type']=>true, // fluid isn't able to compare smth with pure strings, but array-values ;)
+												'typeName'=>$field['type']
+											); 
+							
+							$textBox = ($field['type'] === 'varchar' || $field['type'] === 'phone' || $field['type'] === 'bool' || $field['type'] === 'datetime' || $field['type'] === 'relate' || $field['type'] === 'assigned_user_name'  || $field['type'] === 'name' || $field['type'] === 'date') ? true: null;
+						#####################/FLUID-PREPARATION#######################
+
+						$DATA['fieldRecords'][$name] = array(
+											'value'=>$field2['value'], 
+											'recordName'=>$field['name'],
+											'alter'=>$field2['alter'], 
+											'field'=>	array(
+															'type'=>$fieldType,
+															'textBox'=>$textBox,
+															'label'=>$field['label'],
+															'options'=>$temp
+														),
+											'error'=>null
+										);
+					} 
+				} else { // CASE: fieldset
 					
-					$field['type'] = array(  
-										$field['type']=>true, // fluid isn't able to compare smth with pure strings, but array-values ;)
-										'name'=>$field['type']
-									); 
-					#####################/FLUID-PREPARATION#######################
-					$DATA[$name] = array(
-										'value'=>$field2['value'], 
-										'edit'=>$field2['edit'], 
-										'field'=>$field,
-										'error'=>null
-									);
-				}
+					foreach ($field2['fields'] as $fieldsetField => $fieldsetName) {
+						if($fieldsetField === $field['name']) {
+							
+							######################FLUID-PREPARATION######################
+							
+								if($field['type'] == 'enum') { 					// prepare for fluids options-attribute of viewHelper: <f:form.select/>
+									foreach($field['options'] as $key) {		// options (array)		--->	options (array)
+										$temp[$key['name']] = $key['value'];	//		key (array)		--->		name=>'value'
+									} 											//			name (array)
+									//$field['options'] = $temp;					//				value (string)
+								}
+								//$DATA['fieldTypes'][$field['name']] = $field; 		
+							
+							
+							$fieldType = array(  
+												$field['type']=>true, // fluid isn't able to compare smth with pure strings, but array-values ;)
+												'typeName'=>$field['type']
+											); 
+							
+							$textBox = ($field['type'] === 'varchar' || $field['type'] === 'phone' || $field['type'] === 'bool' || $field['type'] === 'datetime' || $field['type'] === 'relate' || $field['type'] === 'assigned_user_name'  || $field['type'] === 'name' || $field['type'] === 'date') ? true: null;
+							#####################/FLUID-PREPARATION#######################
+							$DATA['fieldRecords'][$field2['legend']]['fieldset'] = true; //FIXME: legend should be VERY unique
+							$DATA['fieldRecords'][$field2['legend']]['legend'] = $field2['legend'];
+							$DATA['fieldRecords'][$field2['legend']]['fields'][$field['name']] = array(
+																									'value'=>$fieldsetName['value'], 
+																									'recordName'=>$field['name'],
+																									'alter'=>$fieldsetName['alter'], 
+																									'field'=>	array(
+																													'type'=>$fieldType,
+																													'textBox'=>$textBox,
+																													'label'=>$field['label'],
+																													'options'=>$temp
+																											),
+																									'error'=>null
+																								);
+						}		
+					}
+				}	
 			}
 		}
-		$DATA['id']['style'] = array('hidden'=>'hidden'); 
-		
+		$DATA['id'] = $recordId;
+		//var_dump($DATA);
 		return $DATA;
-		/*$DATA =	name	(array) 
-								value	(string)
-								edit	(boolean)
-								field	(array) //TODO: reducing of redundancy: existing field-definitions should be top keys
-									name	(string)
-									type	(string) 
-									label	(string)
-									required(int)
-									options	(array)
-										name=>'value'
-										...  		*/
 	}
-	
-	/**
-	 * Combines case values and case labels into one array for fluid.
-	 * 
-	 * @param	array	$caseFields
-	 * @param	array	$cases
-	 * @return	array
-	 * @author	Sebastian Stein <s.stein@netzelf.de>
-	 */
-	public function prepareCasesForFluid($caseFields, $cases){
-		
-		foreach ($caseFields as $field) {
-		$count = 0;
-			foreach ($cases as $case) {
-				
-				if(array_key_exists($field['name'], $case)) {
-				
-				$array[$count][$field['name']] = array(
-													'label'=>$field['label'],
-													'value'=>$case[$field['name']]
-												);
-				}
-				 $count++;
-			}
-		}
-		return $array; /*$array =	0   (array)
-											field-name	(array)
-													label	(string)
-													value	(string)
-											...
-									1	(array)
-									...							*/
-		
-	}
-	
 }
 
 

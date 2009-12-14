@@ -45,13 +45,19 @@ class Tx_SugarMine_Domain_Validator_ProfileValidator extends Tx_Extbase_Validati
 	
 		$RENDER = $GLOBALS['TSFE']->fe_user->getKey('ses','cachedData');
 		
+		if($RENDER['profile']['id'] === $post['tx_sugarmine_sugarmine']['recordId']){
+               $validFields['validFields'][]= array( // also ids will be submitted to sugar, because it is only an record update
+                       'name'  =>      'id',
+                       'value' =>      $RENDER['profile']['id']  
+                );
+		}
+		
 		foreach ($post['tx_sugarmine_sugarmine'] as $name => $value) {
 			// pre-validation:
 			$value = trim($value);
-			if($name !== '__hmac' && $name !== '__referrer' && $value !== null && $value !== '') {
+			if($name !== '__hmac' && $name !== '__referrer' && $name !== 'recordId' && $value !== null && $value !== '') {
 				
 				$field = explode(':',$name); 
-				$field[1] = ($name === 'id') ? 'id' : $field[1]; // hidden id field comes by now without type definition: create one named 'id'
 				
 				switch($field[1]) {
 					case 'varchar': {
@@ -101,20 +107,43 @@ class Tx_SugarMine_Domain_Validator_ProfileValidator extends Tx_Extbase_Validati
 				
 				if ($error === false) {
 				
-					 $validFields['validFields'][]= array(
+					$validFields['validFields'][]= array( // this array structure is defined by SugarCRM
                         'name'  =>      $field[0],
                         'value' =>      $value  
                		 );
-					$RENDER['profile'][$field[0]]['error'] = null; // delete any existing error from data array
-					$RENDER['profile'][$field[0]]['value'] = $value; // cache new VALID value for session
-					
+
+					$err = null; // delete any existing error from data array
+					$val = $value; // cache new VALID value for session
+
 				} elseif (is_string($error)) {
 					
-					$RENDER['profile'][$field[0]]['error'] = $error; // catch error and store it
-					$RENDER['profile'][$field[0]]['value'] = $value; // cache new WRONG value for session
+					$err = $error; // catch error and store it
+					$val = $value; // cache new WRONG value for session
 					$errorFlag = true; // set error flag true
 					
 				}
+
+				foreach($RENDER['profile']['fieldRecords'] as $recordName => $records) { //fetch records
+               		
+					if($records['fieldset'] === true){ // find fieldset record
+						foreach($records['fields'] as $fieldName => $fieldRecord) {	// fetch fieldset records
+							if($fieldName === $field[0]) { // find current validated field-name
+								$fieldsetName = $recordName; // store unique fieldset name
+
+								$fieldset = true; // set fieldset flag
+               					// store value and error into render-dummy
+               					$RENDER['profile']['fieldRecords'][$fieldsetName]['fields'][$field[0]]['value'] = $val;
+               					$RENDER['profile']['fieldRecords'][$fieldsetName]['fields'][$field[0]]['error'] = $err;
+               					
+							}
+               			}
+               		} 
+               	}
+               	if ($fieldset === null) { // no fieldset found:
+               		$RENDER['profile']['fieldRecords'][$field[0]]['value'] = $val;
+               		$RENDER['profile']['fieldRecords'][$field[0]]['error'] = $err;
+               	}
+               	$fieldset = null;
 			}
 		}
 		

@@ -2,70 +2,74 @@
 plugin.tx_sugarmine {
 	sugar {
 		contact {
-			viewableFields {
-				salutation = 1
-				first_name = 1
-				last_name = 1
-				title = 1
-				department = 1
-				phone_home = 1
-				phone_work = 1
-				phone_mobile = 
-				email1 = 1
-				email2 = 1
-				password_c = 1
-				t3_password = 1
-				primary_address_postalcode = 1
-				description = 1
-				date_modified = 1
+			viewable {
+				fields = t3_password, primary_address_postalcode, date_modified
 			}
-			editableFields {
-				salutation = 1
-				first_name = 1
-				last_name = 1
-				title = 1
-				department = 1
-				phone_home = 1
-				phone_work = 1
-				phone_mobile = 
-				email1 = 
-				email2 = 1
-				password_c = 1
-				t3_password = 1
-				primary_address_postalcode = 1
-				description = 1
-				date_modified = 1
+			alterable {
+				fields = salutation, description, first_name, last_name, title, department, password_c
+				fieldSets {
+					Phones {
+						legend = Phones
+						fields = phone_home, phone_work, phone_mobile
+	  				}
+	  				Emails {
+	  					legend = Emails
+	  					fields = email1, email2
+	  				}
+	  			}
 			}
 		}
 		case {
-			viewableFields {
-				name = 1
-				description = 1
-				case_number = 1
-				status = 1
+			viewable {
+				fields = case_number
+			}
+			alterable {
+				fields = status
+				fieldSets {
+					Default {
+						legend = Beschreibung
+						fields = name, description
+	  				}
+	  			}
 			}
 		}
 		company {
-			viewableFields {
-				name = 1
-				description = 1
-				industry = 1
-				website = 1
-				phone_fax = 1
-  				billing_address_street = 1
-  				billing_address_city = 1
-  				billing_address_state = 1
-  				billing_address_postalcode = 1
-  				billing_address_country = 1
+			viewable {
+				fields = name, description, industry, website, phone_fax
 			}
-			editableFields {
-				name = 
-				description = 1
-				industry = 1
-				phone_fax = 1
-				billing_address_postalcode = 0
-				website = 1
+			alterable {
+				fields = description, industry, website, phone_fax
+				fieldSets {
+					billing_address_street {
+						legend = Billing Address
+						fields = billing_address_street, billing_address_city, billing_address_state, billing_address_postalcode, billing_address_country
+	  				}
+	  			}
 			}
+		}
+		project {
+			viewable {
+        		fields = status, name, description, priority
+        		fieldSets {
+          			dates {
+            			legend = Fixed Dates:
+            			fields = date_entered, date_modified
+          			}
+          			tests {
+            			legend = test:
+            			fields = testen, estimated_end_date
+          			}
+        		}
+    		}
+    		alterable {
+    			fields = status, name, description
+        		fieldSets {
+          			dates {
+            			legend = Dates:
+            			fields = estimated_start_date, estimated_end_date
+          			}
+        		}
+    		}
 		}
 	}
 }

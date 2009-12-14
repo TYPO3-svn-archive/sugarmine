@@ -174,8 +174,12 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 		
 		$this->sugarsoapRepository->setLogin();
 		//var_dump($response = $this->sugarsoapRepository->getAvailableModules());
-		//var_dump($this->sugarsoapRepository->getModuleFields('Accounts'));
+		//var_dump($this->sugarsoapRepository->getModuleFields('Contacts'));
 		//$response = $this->sugarsoapRepository->getModuleDataById('4ec68575-fe34-61b0-e5ae-4ace69791d22','Accounts');
+		
+		//var_dump($this->sugarsoapRepository->getModuleFields('Project'));
+		
+		//var_dump($this->sugarsoapRepository->getAccountsRelatedToModule('Project','cc5182ee-4413-80d2-578a-4b17c798ea9b'));
 		//var_dump($response);
 		$this->sugarsoapRepository->setLogout();
 		

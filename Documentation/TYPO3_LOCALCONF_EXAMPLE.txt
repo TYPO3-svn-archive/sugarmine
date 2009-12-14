@@ -19,7 +19,7 @@ $TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['auth']['logoutURI'] = 'index.p
 ##############################################################################################
 exemplary additional content of: "typo3conf/ext/sugar_mine/Configuration/TypoScript/setup.txt"
 
-Field list of CONTACT module on SugarCRM database:
+Field list of "Contacts" module on SugarCRM database:
 
   'assigned_user_name'
   'modified_by_name'
@@ -73,7 +73,7 @@ Field list of CONTACT module on SugarCRM database:
   'm_accept_status_fields'
   'yourcustomfield_c'
 
-Field list of CASES module on SugarCRM database:
+Field list of "Cases" module on SugarCRM database:
  
   'assigned_user_name'
   'modified_by_name'
@@ -96,7 +96,7 @@ Field list of CASES module on SugarCRM database:
   'account_name'
   'account_id'
 
-Field list of ACCOUNT module on SugarCRM database:
+Field list of "Accounts" module on SugarCRM database:
 
   'assigned_user_name'
   'modified_by_name'
@@ -136,3 +136,24 @@ Field list of ACCOUNT module on SugarCRM database:
   'sic_code'
   'parent_name'
   'campaign_id'
+  
+Field list of "Project" module on SugarCRM database:
+  
+["assigned_user_name"]
+["modified_by_name"]
+["created_by_name"]
+["id"]
+["date_entered"]
+["date_modified"]
+["assigned_user_id"]
+["modified_user_id"]
+["created_by"]
+["name"]
+["description"]
+["deleted"]
+["estimated_start_date"]
+["estimated_end_date"]
+["status"]
+["priority"]
+
+  

@@ -10,7 +10,9 @@
 			<label index="Refresh">Refresh</label>
 			<label index="Company">Account</label>
 			<label index="Profile">User Profile</label>
+			<label index="Projects">Projects</label>
 			<label index="Logout">Logout</label>
+			<label index="Contact">Contact</label>
             <label index="Welcome">Welcome to our Support Center</label>
             <label index="UserProfile">User Profile:</label>
 			<label index="Add new Case:">Add new Case:</label>
@@ -99,7 +101,9 @@
 			<label index="Refresh">Aktualisieren</label>
 			<label index="Company">Konto</label>
 			<label index="Profile">Nutzerprofil</label>
+			<label index="Projects">Projekte</label>
 			<label index="Logout">Ausloggen</label>
+			<label index="Contact">Kontakt</label>
             <label index="Welcome">Willkommen in unserem Kundencenter</label>
 			<label index="Add new Case:">Neuen Belang hinzufügen:</label>
 			<!--field label [DE]-->

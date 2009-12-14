@@ -1,17 +1,17 @@
 <f:section name="content">
-	<f:if condition="{cases}">
+	<f:if condition="{projects}">
 		<f:link.action action="profile" controller="Account" ><f:translate key="Profile">User Profile</f:translate></f:link.action> |
 		<f:link.action action="company" controller="Account" ><f:translate key="Company">Account</f:translate></f:link.action> |
-		<f:link.action action="projects" controller="Account" ><f:translate key="Projects">Projects</f:translate></f:link.action> |
+		<f:link.action action="cases" controller="Account" ><f:translate key="Cases">Cases</f:translate></f:link.action> |
 		<f:link.action action="logout" controller="Start" ><f:translate key="Logout">Logout</f:translate></f:link.action>
-		<h3><f:translate key="Cases">Cases</f:translate>:</h3>
+		<h3><f:translate key="Projects">Projects</f:translate>:</h3>
 		<div style="width:800px;"> <!--TODO: style belongs to layouts-->
-			<f:for each="{cases.list}" as="case">
-				<f:form method="post" controller="Account" action="cases" name="caseForm"> <!--name is not unique for each case-->
-				<f:form.hidden name="recordId" value="{case.id}" />
+			<f:for each="{projects}" as="project">
+				<f:form method="post" controller="Account" action="projects" name="projectForm">
+				<f:form.hidden name="recordId" value="{project.id}" />
 				<FIELDSET>
-					<LEGEND><b>Case</b></LEGEND>
-					<f:for each="{case.fieldRecords}" as="records">
+					<LEGEND><b>Project</b></LEGEND>
+					<f:for each="{project.fieldRecords}" as="records">
 						<FIELDSET>
 						<f:if condition="{records.fieldset}">
 							<f:then>
@@ -25,25 +25,18 @@
 											<f:if condition="{name.alter}">
 												<f:then>
 													<f:if condition="{name.field.textBox}">
+													
 														<f:then>
 															<TD>
 																<f:form.textbox value="{name.value}" name="{name.recordName}:{name.field.type.typeName}" />
 																<b style="color:red;">{name.error}</b>
 															</TD>
 														</f:then>
+													
 														<f:else>
-															<f:if condition="{name.field.type.text}">
-																<f:then>
-																	<TD>
-																		<f:form.textarea value="{name.value}" rows="5" cols="40" name="{name.recordName}:text" />
-																		<b style="color:red;">{name.error}</b>
-																	</TD>
-																</f:then>
-																<f:else>
-																	
-																</f:else>
-															</f:if>
+														
 														</f:else>
+													
 													</f:if>
 												</f:then>
 												<f:else>
@@ -99,39 +92,5 @@
 				</f:form>
 			</f:for>
 		</div>
-		<h3><f:translate key="Add new Case:">Add new Case:</f:translate></h3>
-			<f:form method="post" controller="Account" action="cases" name="newCaseForm">
-				<f:form.hidden name="recordId" value="newCase" />
-				<dl>
-					<dt>
-						<b><f:translate key="Priority:">Priority:</f:translate></b>
-					</dt>
-					<dd>
-						<f:form.select value="{cases.newCase.priority.value}" name="priority:varchar" options="{P1: 'High', P2: 'Medium', P3: 'Low'}"/>
-					</dd>
-					<dt>
-						<b><f:translate key="Type">Type</f:translate></b>
-					</dt>
-					<dd>
-						<f:form.select value="{cases.newCase.type.value}" name="type:varchar" options="{Administration: 'Administration', Product: 'Product', User: 'User'}"/>
-					</dd>
-					<dt>
-						<b><f:translate key="Subject:">Subject:</f:translate>*</b>
-					</dt>
-					<dd>
-						<f:form.textbox value="{cases.newCase.name.value}" name="name:varchar"/>
-						<b style="color:red;">{cases.newCase.name.error}</b>
-					</dd>
-					<dt>
-						<b><f:translate key="Description:">Description:</f:translate>*</b>
-					</dt>
-					<dd>
-						<f:form.textarea value="{cases.newCase.description.value}" name="description:varchar" rows="10" cols="45"/>
-						<b style="color:red;">{cases.newCase.description.error}</b>
-					</dd>
-				</dl>
-				<f:form.submit value="Submit"/>
-			</f:form>
 	</f:if>
 </f:section>
-			

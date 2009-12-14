@@ -117,6 +117,12 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	public $caseFields = '';
 	
 	/**
+	 *  
+	 * @var array	Containst field configuration of project fields from setup.txt.
+	 */
+	public $projectFields = '';
+	
+	/**
 	 * Constructor of SugarsoapRepository: calls soapclient and loads global extension-vars.
 	 * 
 	 * @return	void
@@ -126,18 +132,17 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		$this->setup = t3lib_div::makeInstance('Tx_SugarMine_Domain_Repository_SetupRepository');
 		if(is_object($this->setup)) {
 			
-			$this->contactFields['view'] = $this->setup->getValue('sugar.contact.viewableFields.');
-			$this->contactFields['edit'] = $this->setup->getValue('sugar.contact.editableFields.');
-			$this->companyFields['view'] = $this->setup->getValue('sugar.company.viewableFields.');
-			$this->companyFields['edit'] = $this->setup->getValue('sugar.company.editableFields.');
-			$this->caseFields['view'] = $this->setup->getValue('sugar.case.viewableFields.'); //TODO: may a user change existing cases on SugarCRM!?? its a little bit absurd
+			$this->contactFields['view'] = $this->setup->getValue('sugar.contact.viewable.');
+			$this->contactFields['alter'] = $this->setup->getValue('sugar.contact.alterable.');
 			
-			$this->contactFields['view']['id'] = 1;
-			$this->contactFields['view']['account_id'] = 1;
-			$this->contactFields['edit']['id'] = null;
-			$this->contactFields['edit']['account_id'] = null;
-			$this->companyFields['view']['id'] = 1;
-			$this->companyFields['edit']['id'] = null;
+			$this->companyFields['view'] = $this->setup->getValue('sugar.company.viewable.');
+			$this->companyFields['alter'] = $this->setup->getValue('sugar.company.alterable.');
+			
+			$this->caseFields['view'] = $this->setup->getValue('sugar.case.viewable.');
+			$this->caseFields['alter'] = $this->setup->getValue('sugar.case.alterable.');
+			
+			$this->projectFields['view'] = $this->setup->getValue('sugar.project.viewable.');
+			$this->projectFields['alter'] = $this->setup->getValue('sugar.project.alterable.');
 
 			$this->soapUrl = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['url'];
 			$this->user = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['user'];
@@ -338,7 +343,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		}
 
 		$query = $table.'.id="'.$contactId.'"';
-		$matches = $this->getEntryList($module,$query,'',0,$selected_fields = array_keys($this->contactFields['view']),0,0);
+		$matches = $this->getEntryList($module,$query,'',0,array()/*$selected_fields = array_keys($this->contactFields['view'])*/,0,0);
 
 		if(is_array($matches)) {
 			
@@ -372,7 +377,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		}
 
 		$query = $table.'.account_id="'.$accountId.'"';
-		$matches = $this->getEntryList($module,$query,'',0,$selected_fields = array_keys($this->caseFields['view']),0,0);
+		$matches = $this->getEntryList($module,$query,'',0, array()/*$selected_fields = array_keys($this->caseFields['view'])*/,0,0);
 
 		if(is_array($matches)) {
 			
@@ -399,8 +404,8 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		if($Id == '') { 
 			return false;
 		}
-
-		$matches = $this->getEntry($module, $Id, $select_fields = array_keys($this->companyFields['view']));
+		//FIXME select fields and setup.txt data
+		$matches = $this->getEntry($module, $Id, $test=array() /*$select_fields = array_keys($this->companyFields['view'])*/);
 
 		if(is_array($matches)) {
 			
@@ -431,7 +436,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		}
 		
 		$query = $table.'.first_name="'.$userNames[0].'" AND '.$table.'.last_name="'.$userNames[1].'"';
-		$matches = $this->getEntryList($module,$query,'',0,$selected_fields = array_keys($this->contactFields['view']),0,0);
+		$matches = $this->getEntryList($module,$query,'',0,array()/*$selected_fields = array_keys($this->contactFields['view'])*/,0,0);
 		if(is_array($matches)) {
 			foreach ($matches['entry_list'] as $entry) { // loop matched users and compare email addresses
 				if ($entry['email1'] == $userEMail || $entry['email2'] == $userEMail) {
@@ -480,16 +485,91 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
     	}	
 	}
 	
+	/**
+	 * Get entries from SugarCRM.
+	 * 
+	 * @param	string	$module
+	 * @param	string	$ids
+	 * @param	array	$select_fields
+	 * 
+	 * @return	string	base64-decoded xml
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	private function getEntries($module='', $ids='', $select_fields=array()) {
+
+		if($module !== '' && $ids !== '') {
+			return $response = $this->client->call('get_entries', array(
+																	$this->session_id,
+																	$module,
+																	$ids,
+																	$select_fields
+																)
+											);
+		} else {
+			return false;
+		}	
+	}
+	
+	/**
+	 * Get module data from SugarCRM without any additional parameters.
+	 * 
+	 * @param	string	$module	module name from SugarCRM
+	 * @param	string	$select_fields	selected fields
+	 * 
+	 * @return	array or false
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getModuleData($module='',$select_fields = array()) {
+
+		if($module === '') {
+			
+			return false;
+			
+		} else {
+			
+			$matches = $this->getEntryList($module,$query,'',0,$select_fields,0,0);
+
+			return $matches;
+		}
+	}
+	
+	/**
+	 * Get Accounts related to any module of SugarCRM
+	 * 
+	 * @param	string	$moduleName
+	 * @param	string	$moduleId
+	 * 
+	 * @return	mixed
+	 * @author	Sebastian Stein <s.stein@netzelf.de>
+	 */
+	public function getAccountsRelatedToModule($moduleName, $moduleId) {
+		
+		if($moduleName === '' || $moduleId === '') {
+			return false;
+		} else {
+	 		$result = $this->client->call('get_relationships',$params = array(
+                       													'session' => $this->session_id,
+                       													'module_name' => $moduleName,
+                       													'module_id' => $moduleId, // the id of the Project
+                       													'related_module' => 'Accounts',
+                       													'related_module_query' => '',
+                       													'deleted' => 0
+																		));
+			return $result;
+		}
+	}
+	
 	#####################--MINOR IMPORTANT NUSOAP CALLS--#########################
 	## they were successfully tested, but are CURRENTLY not called by SugarMine ##
 	##############################################################################
+	
 	
 	/**
 	 * Set a new contact on sugarCRMs database.
 	 * 
 	 * @param	string	$email
 	 * @param	string	$password
-	 * TODO: define some more contact parameters
+	 * FIXME: NOT TESTED:	define some more contact parameters
 	 * 
 	 * @return	mixed
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
@@ -497,11 +577,11 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	public function createNewContact($email='',$password=''){
         
 		if($email !== '' && $password !== '') {
-			return $this->client->setContact(array(
-                        						'email1' => $email,
-                        						'password_c' => $password
-        									)
-        								);
+			return $this->client->call('create_contact', array(
+                        								'email1' => $email,
+                        								'password_c' => $password
+        											)
+        							);
         } else {
         	return false;
         }
