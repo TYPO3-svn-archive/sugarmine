@@ -1,12 +1,30 @@
  # SugarMine Plugin configuration
 plugin.tx_sugarmine {
+	redmine {
+		ticket {
+			viewable {
+				fields = id, project, tracker, status, priority, author, subject
+			}
+			alterable {
+				fields = priority, description, status
+			}
+		}
+		project {
+			viewable {
+				fields = id, name, identifier, description, created_on, updated_on
+			}
+			alterable {
+				fields = description
+			}
+		}
+	}
 	sugar {
 		contact {
 			viewable {
-				fields = t3_password, primary_address_postalcode, date_modified
+				fields = t3_password, primary_address_postalcode, date_modified, first_name
 			}
 			alterable {
-				fields = salutation, description, first_name, last_name, title, department, password_c
+				fields = salutation, description, last_name, password_c
 				fieldSets {
 					Phones {
 						legend = Phones

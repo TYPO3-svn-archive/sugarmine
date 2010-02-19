@@ -1,0 +1,69 @@
+<f:section name="content">
+	<f:if condition="{issues}">
+		<f:link.action action="profile" controller="Account" ><f:translate key="Profile">User Profile</f:translate></f:link.action> |
+		<f:link.action action="company" controller="Account" ><f:translate key="Company">Account</f:translate></f:link.action> |
+		<f:link.action action="cases" controller="Account" ><f:translate key="Cases">Cases</f:translate></f:link.action> |
+		<f:link.action action="projects" controller="Account" ><f:translate key="Projects">Projects</f:translate></f:link.action> |
+		<f:link.action action="pmsprojects" controller="Account" ><f:translate key="pmsProjects">Projects (PMS)</f:translate></f:link.action> |
+		<f:link.action action="logout" controller="Start" ><f:translate key="Logout">Logout</f:translate></f:link.action>
+		<h3><f:translate key="Issues">Issues (PMS)</f:translate>:</h3>
+		
+		<dl>
+			<f:for each="{issues}" as="issue">
+				<dt>
+					<f:translate key="ID:">ID:</f:translate>
+				</dt>
+				<dd>
+					{issue.id}
+				</dd>
+				<dt>
+					<f:translate key="Subject:">Subject:</f:translate>
+				</dt>
+				<dd>
+					{issue.subject}
+				</dd>
+				<dt>
+					<f:translate key="Description:">Description:</f:translate>
+				</dt>
+				<dd>
+					{issue.description}
+				</dd>
+				<hr>
+			</f:for>
+		</dl>
+		
+		<h3><f:translate key="Add new Issue:">Add new Issue:</f:translate></h3>
+			<f:form method="post" controller="Account" action="issues" name="newIssueForm">
+				<!--<f:form.hidden name="recordId" value="newIssue" />-->
+				<dl>
+					<dt>
+						<b><f:translate key="Subject:">Subject:</f:translate>*</b>
+					</dt>
+					<dd>
+						<f:form.textbox name="subject"/>
+					</dd>
+					<dt>
+						<b><f:translate key="Description:">Description:</f:translate>*</b>
+					</dt>
+					<dd>
+						<f:form.textarea name="description" rows="10" cols="45"/>
+					</dd>
+					<dt>
+						<b><f:translate key="Tracker:">Tracker:</f:translate></b>
+					</dt>
+					<dd>
+						<f:form.select name="tracker_id" options="{1: 'Fehler', 2: 'Feature', 3: 'Unterstützung'}"/>
+					</dd>
+					<dt>
+						<b><f:translate key="Priority:">Priority:</f:translate></b>
+					</dt>
+					<dd>
+						<f:form.select name="priority_id" options="{3: 'Niedrig', 4: 'Normal', 5: 'Hoch', 6: 'Dringend', 7: 'Sofort'}"/>
+					</dd>
+					
+				</dl>
+				<f:form.submit value="Submit"/>
+			</f:form>
+	</f:if>
+</f:section>
+			

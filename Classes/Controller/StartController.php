@@ -36,6 +36,18 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	 * @var	Tx_SugarMine_Domain_Repository_SugarsoapRepository	SugarMines Repository for NuSOAP-WebServices of SugarCRM.
 	 */
 	protected $sugarsoapRepository;
+	
+	/**
+	 * 	
+	 * @var	Tx_SugarMine_Domain_Repository_RedminerestRepository	SugarMines Repository for RESTful-WebServices of Redmine.
+	 */
+	protected $redminerestRepository;
+	
+	/**
+	 * 	
+	 * @var	Tx_SugarMine_Domain_Repository_RedminerestRepository	SugarMines Repository for RESTful-WebServices of Redmine.
+	 */
+	protected $accountRepository;
 
 	/**
 	 * Initializes the current action.
@@ -45,6 +57,10 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	protected function initializeAction() {
 
 		$this->sugarsoapRepository = t3lib_div::makeInstance('Tx_SugarMine_Domain_Repository_SugarsoapRepository');
+		$this->redminerestRepository = t3lib_div::makeInstance('Tx_SugarMine_Domain_Repository_RedminerestRepository');
+		################TO DELETE after implementation of restful redmine api#########
+		$this->accountRepository = t3lib_div::makeInstance('Tx_SugarMine_Domain_Repository_AccountRepository');
+		##############################################################################
 	}
 
 	/**
@@ -62,7 +78,7 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 			
 			if ($serviceData['authSystem'] === 'sugar') { // case1: forwards FRESH SUGAR-authenticated contact-data
 				
-				var_dump('case: sugar-authenticated user');
+				//var_dump('case: sugar-authenticated user');
 				$GLOBALS['TSFE']->fe_user->setKey('ses','authorizedUser', $serviceData); // put temporary contactData into current authorized session
 				$GLOBALS['TSFE']->fe_user->setKey('ses','authSystemWas', 'Sugar'); // put information about authentication system into session data
 				$IDs = array(
@@ -76,7 +92,7 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 				
 			} elseif (($authSystem === 'typo3' || $authSystem === 'both') && $serviceData['authSystem'] === null) { // case2: create (the first time) data of TYPO3-authenticated user
 				
-				var_dump('case: typo3-authenticated user');
+				//var_dump('case: typo3-authenticated user');
 				$user = $GLOBALS['TSFE']->fe_user->user; 
 				
 				$this->sugarsoapRepository->setLogin();
@@ -95,7 +111,7 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 					$this->forward('index','Account');
 				
 				} else {
-					var_dump('authenticated typo3-user was not found on SugarCRMs database');
+					//var_dump('authenticated typo3-user was not found on SugarCRMs database');
 				}
 			}
 		} else {
@@ -115,7 +131,7 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 		
 		if ($authSystemWas === 'Sugar') { // case: refresh data of recently SUGAR-authenticated user
 				
-			var_dump('case: refresh contact data of recently SUGAR-authenticated user');
+			//var_dump('case: refresh contact data of recently SUGAR-authenticated user');
 			$IDs = $GLOBALS['TSFE']->fe_user->getKey('ses','IDs');
  				
 			$this->sugarsoapRepository->setLogin();
@@ -129,7 +145,7 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 			}
 		} elseif ($authSystemWas === 'Typo3') { // case: refresh data of TYPO3-authenticated user
 				
-			var_dump('case: refresh contact data of recently TYPO3-authenticated user');
+			//var_dump('case: refresh contact data of recently TYPO3-authenticated user');
 			$user = $GLOBALS['TSFE']->fe_user->user; 
 				
 			$this->sugarsoapRepository->setLogin(); 
@@ -172,7 +188,19 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	protected function testAction() {
 		var_dump('hello test action');
 		
-		$this->sugarsoapRepository->setLogin();
+		##REDMINE:
+		//$this->redminerestRepository->createIssue(array ('subject' => 'TEST_ISSUE', 'project_id' => 1));
+		//$this->redminerestRepository->findIssues(array('project_id' => 1)); //array('project_id' => 1), 1
+		var_dump($projects = $this->redminerestRepository->findProjects());
+		/*
+		$projects = $this->redminerestRepository->findProjects();
+		foreach($projects as $project) {
+			$fieldConf = $this->accountRepository->mergeModuleDataWithFieldConfNew($project, $this->redminerestRepository->projectFields['view'], $this->redminerestRepository->projectFields['alter']);
+			//var_dump($fieldConf);
+		}
+		*/
+		##SUGAR:
+		//$this->sugarsoapRepository->setLogin();
 		//var_dump($response = $this->sugarsoapRepository->getAvailableModules());
 		//var_dump($this->sugarsoapRepository->getModuleFields('Contacts'));
 		//$response = $this->sugarsoapRepository->getModuleDataById('4ec68575-fe34-61b0-e5ae-4ace69791d22','Accounts');
@@ -181,7 +209,7 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 		
 		//var_dump($this->sugarsoapRepository->getAccountsRelatedToModule('Project','cc5182ee-4413-80d2-578a-4b17c798ea9b'));
 		//var_dump($response);
-		$this->sugarsoapRepository->setLogout();
+		//$this->sugarsoapRepository->setLogout();
 		
 	}
 

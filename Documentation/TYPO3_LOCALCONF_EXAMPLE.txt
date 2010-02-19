@@ -17,8 +17,28 @@ $TYPO3_CONF_VARS['EXT']['extConf']['sugar_mine']['auth']['logoutURI'] = 'index.p
 
 
 ##############################################################################################
-exemplary additional content of: "typo3conf/ext/sugar_mine/Configuration/TypoScript/setup.txt"
+exemplary additional content of: "typo3conf/ext/sugar_mine/Configuration/TypoScript/setup.txt":
 
+
+###REDMINE:###
+Field list of "Issues" on Redmines database:
+
+	id 
+	project
+	tracker
+	status
+	priority
+	author
+	subject
+	description
+	start_date
+	due_date
+	done_ratio
+	estimated_hours
+	custome_fields
+
+
+###SUGARCRM:###
 Field list of "Contacts" module on SugarCRM database:
 
   'assigned_user_name'

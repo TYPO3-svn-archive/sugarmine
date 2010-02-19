@@ -1,0 +1,55 @@
+<f:section name="content">
+	<f:if condition="{projects}">
+		<f:link.action action="profile" controller="Account" ><f:translate key="Profile">User Profile</f:translate></f:link.action> |
+		<f:link.action action="company" controller="Account" ><f:translate key="Company">Account</f:translate></f:link.action> |
+		<f:link.action action="cases" controller="Account" ><f:translate key="Cases">Cases</f:translate></f:link.action> |
+		<f:link.action action="issues" controller="Account" ><f:translate key="Issues">Issues</f:translate></f:link.action> |
+		<f:link.action action="projects" controller="Account" ><f:translate key="Projects">Projects</f:translate></f:link.action> |
+		<f:link.action action="logout" controller="Start" ><f:translate key="Logout">Logout</f:translate></f:link.action>
+		<h3><f:translate key="pmsProjects">Projects (PMS)</f:translate>:</h3>
+		
+		<dl>
+			<f:for each="{projects}" as="project">
+				<dt>
+					<f:translate key="ID:">ID:</f:translate>
+				</dt>
+				<dd>
+					{project.id}
+				</dd>
+				<dt>
+					<f:translate key="Name">Name:</f:translate>
+				</dt>
+				<dd>
+					{project.name}
+				</dd>
+				<dt>
+					<f:translate key="Identifier">Identifier:</f:translate>
+				</dt>
+				<dd>
+					{project.identifier}
+				</dd>
+				<dt>
+					<f:translate key="Description:">Description:</f:translate>
+				</dt>
+				<dd>
+					{project.description}
+				</dd>
+				<dt>
+					<f:translate key="Created on">Created on:</f:translate>
+				</dt>
+				<dd>
+					{project.created_on}
+				</dd>
+				<dt>
+					<f:translate key="Updated on">Updated on:</f:translate>
+				</dt>
+				<dd>
+					{project.updated_on}
+				</dd>
+				<hr>
+			</f:for>
+		</dl>
+
+	</f:if>
+</f:section>
+			

@@ -94,6 +94,15 @@
 			<label index="Parent Account ID">Parent Account ID</label>
 			<label index="SIC Code:">SIC Code:</label>
 			<label index="Member of:">Member of:</label>
+			<!--/field label [ENG] REDMINE-->
+			<label index="pmsProjects">Projects (PMS)</label>
+			<label index="Issues">Issues (PMS)</label>
+			<label index="Add new Issue:">Add new Issue:</label>
+			<label index="Name">Name:</label>
+			<label index="Identifier">Identifier:</label>
+			<label index="Updated on">Updated on:</label>
+			<label index="Created on">Created on:</label>
+			<!--/field label [ENG] REDMINE-->
 			<!--/field label [ENG]-->
 		</languageKey>
 		<languageKey index="de" type="array">
@@ -183,6 +192,15 @@
 			<label index="Parent Account ID">Ursprungs Konto ID</label>
 			<label index="SIC Code:">SIC Code:</label>
 			<label index="Member of:">Mitglied von:</label>
+			<!--/field label [DE] REDMINE-->
+			<label index="pmsProjects">Projekte (PMS)</label>
+			<label index="Issues">Tickets (PMS)</label>
+			<label index="Add new Issue:">Neues Ticket erstellen:</label>
+			<label index="Name">Name:</label>
+			<label index="Identifier">Bezeichner:</label>
+			<label index="Created on">Erstellt am:</label>
+			<label index="Updated on">Aktualisiert am:</label>
+			<!--/field label [DE] REDMINE-->
 			<!--/field label [DE]-->
 		</languageKey>
 	</data>

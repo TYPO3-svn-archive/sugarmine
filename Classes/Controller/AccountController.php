@@ -66,6 +66,12 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	 * @var Tx_SugarMine_Domain_Validator_CompanyValidator	SugarMines Company (SugarCRM: "Account") Validator for submitted data from company form.
 	 */
 	private $projectValidator;
+	
+	/**
+	 * 	
+	 * @var	Tx_SugarMine_Domain_Repository_RedminerestRepository	SugarMines Repository for RESTful-WebServices of Redmine.
+	 */
+	private $redminerestRepository;
 
 	/**
 	 * Initializes the current action.
@@ -80,6 +86,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 		$this->companyValidator = t3lib_div::makeInstance('Tx_SugarMine_Domain_Validator_CompanyValidator');
 		$this->caseValidator = t3lib_div::makeInstance('Tx_SugarMine_Domain_Validator_CaseValidator');
 		$this->projectValidator = t3lib_div::makeInstance('Tx_SugarMine_Domain_Validator_ProjectValidator');
+		$this->redminerestRepository = t3lib_div::makeInstance('Tx_SugarMine_Domain_Repository_RedminerestRepository');
 	}
 
 	/**
@@ -90,7 +97,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	 */
 	protected function indexAction() {
 		
-		var_dump('Controller: Account; Action: form');
+		//var_dump('Controller: Account; Action: form');
 		
 		$contactData = $GLOBALS['TSFE']->fe_user->getKey('ses','authorizedUser'); // get user Data from authorized session
 		$IDs = $GLOBALS['TSFE']->fe_user->getKey('ses', 'IDs');
@@ -129,7 +136,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	protected function profileAction() {
 		
 		$RENDER = $GLOBALS['TSFE']->fe_user->getKey('ses','cachedData');
-var_dump($RENDER);
+//var_dump($RENDER);
 		$this->view->assign('contact', $RENDER['profile']);
 		
 		$post = t3lib_div::_POST();
@@ -370,6 +377,32 @@ var_dump($RENDER);
 			$this->view->assign('projects', $RENDER['projects']);
 		}
 		//var_dump($RENDER);
+	}
+	
+	protected function issuesAction() {
+		
+		$post = t3lib_div::_POST();
+		if (!empty($post)) {
+			
+			foreach ($post['tx_sugarmine_sugarmine'] as $name => $value) {
+				if($name !== '__hmac' && $name !== '__referrer' && $name !== 'recordId') {
+					if($value !== '' && $value !== null) { // "validation"
+						$issue[$name] = $value;
+					}
+				}
+			}
+			$issue['project_id'] = 1; //TODO: identifier to sugarcrm/redmine projects
+			var_dump($issue);
+			$this->redminerestRepository->createIssue($issue);
+		}
+			$issues = $this->redminerestRepository->findIssues(array('project_id' => 1));
+			$this->view->assign('issues', $issues);
+	}
+	
+	protected function pmsprojectsAction() {
+		
+		$projects = $this->redminerestRepository->findProjects('',1);
+		$this->view->assign('projects', $projects);
 	}
 	
 	/**

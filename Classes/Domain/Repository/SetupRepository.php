@@ -80,7 +80,7 @@ class Tx_SugarMine_Domain_Repository_SetupRepository extends Tx_Extbase_Persiste
 		$isArray = (substr($path, -1) === '.') ? true : null;
 		$array = $this->path2array($path, $isArray); 
 		$eval = '$result = $this->setup[\''.$array.'\'];'; // join into smth like this: $return=$this->setup['key'.'.']['key'.'.']['value'];
-		eval($eval);
+		eval($eval); 
 		return (empty($result)) ? $default : $result;
 	}
 	

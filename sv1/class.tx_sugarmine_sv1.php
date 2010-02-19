@@ -135,12 +135,12 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 		$available = false;
 		if ($this->authSystem == 'sugar' || $this->authSystem == 'both') {
 			if($this->soapUrl != '' && $this->user != '' && $this->passw != '' && $this->passwField != '' && $this->passwKey != '' && $this->dummy != '') {
-				var_dump('SERVICE_INIT: SUGAR OR BOTH');
+				//var_dump('SERVICE_INIT: SUGAR OR BOTH');
 				$available = parent::init();
 			}
 		} elseif ($this->authSystem == 'typo3') {
 			if ($this->soapUrl != '' && $this->user != '' && $this->passw != '') {
-				var_dump('SERVICE_INIT: TYPO3');
+				//var_dump('SERVICE_INIT: TYPO3');
 				$available = parent::init();
 			}
 		} return $available;
@@ -166,7 +166,7 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 		
 		$OK = 100;
 		if ($this->login['uident'] && $this->login['uname'])	{
-				var_dump($OK = $this->compareUident($user, $this->login)); // true if login-data matched	
+				$OK = $this->compareUident($user, $this->login); // true if login-data matched	
 			
 			if(!$OK) {
 				// Failed login attempt (wrong password) - write that to the log!
