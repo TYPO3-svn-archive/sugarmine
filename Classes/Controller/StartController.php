@@ -75,7 +75,7 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 		$serviceData = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['auth']['temp'];
 		
 		if($GLOBALS["TSFE"]->loginUser) {
-			
+			//Tx_SugarMine_Utils_Debug::dump('fe user is auth.');
 			if ($serviceData['authSystem'] === 'sugar') { // case1: forwards FRESH SUGAR-authenticated contact-data
 				
 				//var_dump('case: sugar-authenticated user');
@@ -186,12 +186,12 @@ class Tx_SugarMine_Controller_StartController extends Tx_Extbase_MVC_Controller_
 	 * @author	Sebastian Stein <s.stein@netzelf.de>
 	 */
 	protected function testAction() {
-		var_dump('hello test action');
+		//Tx_SugarMine_Utils_Debug::dump('hello test action');
 		
 		##REDMINE:
 		//$this->redminerestRepository->createIssue(array ('subject' => 'TEST_ISSUE', 'project_id' => 1));
 		//$this->redminerestRepository->findIssues(array('project_id' => 1)); //array('project_id' => 1), 1
-		var_dump($projects = $this->redminerestRepository->findProjects());
+		//Tx_SugarMine_Utils_Debug::dump($projects = $this->redminerestRepository->findProjects());
 		/*
 		$projects = $this->redminerestRepository->findProjects();
 		foreach($projects as $project) {

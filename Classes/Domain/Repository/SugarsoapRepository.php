@@ -335,7 +335,8 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 */
 	public function getContactDataBySugarAuthUser($contactId='') {
 		
-		$table = $module = 'Contacts';
+		$module = 'Contacts';
+		$table = 'contacts';
 		$contactId = trim($contactId);
 
 		if($contactId == '') { 
@@ -343,7 +344,7 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 		}
 
 		$query = $table.'.id="'.$contactId.'"';
-		$matches = $this->getEntryList($module,$query,'',0,array()/*$selected_fields = array_keys($this->contactFields['view'])*/,0,0);
+		$matches = $this->getEntryList($module,$query,'',0,$selected_fields = array(),0,0); //$selected_fields = array_keys($this->contactFields['view'])
 
 		if(is_array($matches)) {
 			
@@ -427,7 +428,8 @@ class Tx_SugarMine_Domain_Repository_SugarsoapRepository extends Tx_Extbase_Pers
 	 */
 	public function getContactDataByTypoAuthUser($userEMail='', $userName='') {
 		
-		$table = $module = 'Contacts';
+		$module = 'Contacts';
+		$table = 'contacts';
 		$userEMail = trim($userEMail);
 		$userName = trim($userName);
 		$userNames = explode(' ', $userName);

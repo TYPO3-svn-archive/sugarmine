@@ -167,7 +167,7 @@ class Tx_SugarMine_Domain_Repository_RedminerestRepository extends Tx_Extbase_Pe
 		if(is_array($projects)) { // $projectId === 'all': array is used
 			
 			for ($i=0; $i < count($projects); $i++) {
-    			//var_dump($projects[$i]->name);
+    			var_dump($projects[$i]->name);
     			foreach($projects[$i] as $key => $value) {
     				if($key === '_data') {
     					$data[$i] = $value;

@@ -215,6 +215,7 @@ class ActiveResource {
 			return $this->_send_and_receive ($url, 'GET');
 		}
 		return $this->_send_and_receive ($this->site . $this->element_name . '/' . $id . '.xml', 'GET');
+
 	}
 
 	/**

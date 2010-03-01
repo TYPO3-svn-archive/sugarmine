@@ -32,6 +32,8 @@ require_once(t3lib_extMgm::extPath('sugar_mine').'Resources/Library/nusoap/lib/n
 require_once(t3lib_extMgm::extPath('sugar_mine').'Resources/Library/nusoap/lib/class.wsdlcache.php');
 require_once(t3lib_extMgm::extPath('sugar_mine').'Resources/Library/Blowfish/Blowfish.php');
 
+require_once(t3lib_extMgm::extPath('sugar_mine').'Classes/Utils/Debug.php');
+
 /**
  * This service tries to authenticate a typo3-login against your SugarCRM-database or typos fe_user table.
  *
@@ -129,6 +131,7 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 		$this->user = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['user'];
 		$this->passw = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['passw'];
 		$this->passwField = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['passwField'];
+		$this->nameField = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['nameField'];
 		$this->passwKey = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['sugar']['passwKey'];
 		$this->dummy = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['auth']['t3DummyUserName'];
 		$this->authSystem = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['auth']['system'];
@@ -225,14 +228,14 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 				$result = $this->getSugarContact();
 				$this->client->call('logout',$this->session_id); // call logout!
 				######################### /SugarCRM-REQUEST ###############################
-
+//Tx_SugarMine_Utils_Debug::dump($result);
 				// evaluation of sugars response:
 				if(is_array($result)) {
 					
 					$user = $this->fetchUserRecord($this->dummy);
 					// maps authenticated login-data over the current fe_user (defined by a global var: $this->dummy):
 					$user['username'] = $this->login['uname'];
-					$user['password'] = $this->login['uident'];
+					$user['password'] = $this->login['uident'];//Tx_SugarMine_Utils_Debug::dump($user);
 					// i cant store contact-data ($result) into the current session, because we are still INSIDE the authentication-service (this is done by the sugarmine plugin!!!) THATS why i have to store it temporarily into a global var!
 					$GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['sugar_mine']['auth']['temp'] = $result; // store contact data
 				}
@@ -321,9 +324,9 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 			}
 		}
 		
-		$emailAddr = trim($this->login['uname']);
+		$name = trim($this->login['uname']);
 		$password = trim($this->login['uident']);
-		if($emailAddr == '' OR $password == '') { 
+		if($name == '' OR $password == '') { 
 			return false;
 		}
 		#encode password to be able to detect it in sugars database:
@@ -334,15 +337,16 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 		$password = base64_encode($encrPass); // encrypted and encoded password
 		
 		#if there is a matching password, there will be an user id field-value in your custom table ..
-		$passQuery = $table.'_cstm.'.$this->passwField.'="'.$password.'"';
-		$matches = $this->getEntryList($module,$passQuery,'',0,$fields=array(),0,0);
+		//$passQuery = $table.'_cstm.'.$this->passwField.'="'.$password.'"';
+		$Query = $table.'_cstm.'.$this->passwField.'="'.$password.'" AND '.$table.'_cstm.'.$this->nameField.'="'.$name.'"';
+		$matches = $this->getEntryList($module,$Query,'',0,$fields=array(),0,0);
 		$Id = $matches[0]['id']; // pick user id
 		if(!empty($Id)) {
 			#with that user-id you can get your unique contact data and compare the email addresses
-			$mailQuery = $table.'.id="'.$Id.'"';
-			$matches = $this->getEntryList($module,$mailQuery,'',0,$fields=array(),0,0);
+			$contactQuery = $table.'.id="'.$Id.'"';
+			$matches = $this->getEntryList($module,$contactQuery,'',0,$fields=array(),0,0);
 			#delete the 2nd or-condition, if only the primary email address should be valid:
-			if($matches[0]['email1'] == $emailAddr OR $matches[0]['email2'] == $emailAddr) {
+			//if($matches[0]['email1'] == $emailAddr OR $matches[0]['email2'] == $emailAddr) {
 				return array(
 							'authSystem'=>'sugar',
 							'source'=>$SOURCE, 
@@ -351,10 +355,10 @@ class tx_sugarmine_sv1 extends tx_sv_authbase {
 											'fields'=>$matches['field_list']
 										)
 						);
-			}
+			/*}
 			else {
 				return false;
-			}
+			}*/
 		}
 		else {
 			return false;

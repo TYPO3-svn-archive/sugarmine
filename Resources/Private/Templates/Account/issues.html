@@ -4,8 +4,7 @@
 		<f:link.action action="company" controller="Account" ><f:translate key="Company">Account</f:translate></f:link.action> |
 		<f:link.action action="cases" controller="Account" ><f:translate key="Cases">Cases</f:translate></f:link.action> |
 		<f:link.action action="projects" controller="Account" ><f:translate key="Projects">Projects</f:translate></f:link.action> |
-		<f:link.action action="pmsprojects" controller="Account" ><f:translate key="pmsProjects">Projects (PMS)</f:translate></f:link.action> |
-		<f:link.action action="logout" controller="Start" ><f:translate key="Logout">Logout</f:translate></f:link.action>
+		<f:link.action action="pmsprojects" controller="Account" ><f:translate key="pmsProjects">Projects (PMS)</f:translate></f:link.action><br /><br />
 		<h3><f:translate key="Issues">Issues (PMS)</f:translate>:</h3>
 		
 		<dl>
@@ -31,9 +30,10 @@
 				<hr>
 			</f:for>
 		</dl>
-		
+		<br />
 		<h3><f:translate key="Add new Issue:">Add new Issue:</f:translate></h3>
 			<f:form method="post" controller="Account" action="issues" name="newIssueForm">
+				<div class="box">
 				<!--<f:form.hidden name="recordId" value="newIssue" />-->
 				<dl>
 					<dt>
@@ -62,6 +62,7 @@
 					</dd>
 					
 				</dl>
+				</div><br />
 				<f:form.submit value="Submit"/>
 			</f:form>
 	</f:if>

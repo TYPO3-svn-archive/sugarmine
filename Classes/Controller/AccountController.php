@@ -97,7 +97,7 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	 */
 	protected function indexAction() {
 		
-		//var_dump('Controller: Account; Action: form');
+		//Tx_SugarMine_Utils_Debug::dump('Controller: Account; Action: form');
 		
 		$contactData = $GLOBALS['TSFE']->fe_user->getKey('ses','authorizedUser'); // get user Data from authorized session
 		$IDs = $GLOBALS['TSFE']->fe_user->getKey('ses', 'IDs');
@@ -350,25 +350,24 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 			
 			$this->sugarsoapRepository->setLogin();
 			$response = $this->sugarsoapRepository->getModuleData('Project'); // get ALL projects from SugarCRM
+
+				foreach($response['entry_list'] as $project) {
 			
-			foreach($response['entry_list'] as $project) {
+					$relations = $this->sugarsoapRepository->getAccountsRelatedToModule('Project',$project['id']); // catch all accounts, that are related to the fetched project
+					//var_dump($relations);
 			
-				$relations = $this->sugarsoapRepository->getAccountsRelatedToModule('Project',$project['id']); // catch all accounts, that are related to the fetched project
-				//var_dump($relations);
-			
-				if (!empty($relations['ids'])) {
+					if (!empty($relations['ids'])) {
 				
-					foreach ($relations['ids'] as $relation) {
-						if ($relation['id'] === $IDs['accountId']) { // is actual account related to the fetched project?
-							$IDs['projectIds'][] = $project['id'];
+						foreach ($relations['ids'] as $relation) {
+							if ($relation['id'] === $IDs['accountId']) { // is actual account related to the fetched project?
+								$IDs['projectIds'][] = $project['id'];
 							
-							$fieldConf = $this->accountRepository->mergeModuleDataWithFieldConfNew($project, $this->sugarsoapRepository->projectFields['view'], $this->sugarsoapRepository->projectFields['alter']);
-							$RENDER['projects'][] = $this->accountRepository->prepareForFluidNew($response['field_list'], $fieldConf, $project['id']);
+								$fieldConf = $this->accountRepository->mergeModuleDataWithFieldConfNew($project, $this->sugarsoapRepository->projectFields['view'], $this->sugarsoapRepository->projectFields['alter']);
+								$RENDER['projects'][] = $this->accountRepository->prepareForFluidNew($response['field_list'], $fieldConf, $project['id']);
+							}
 						}
 					}
 				}
-			}
-
 		$GLOBALS['TSFE']->fe_user->setKey('ses', 'IDs', $IDs);
 		$GLOBALS['TSFE']->fe_user->setKey('ses', 'cachedData', $RENDER);
 		
@@ -395,13 +394,13 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 			var_dump($issue);
 			$this->redminerestRepository->createIssue($issue);
 		}
-			$issues = $this->redminerestRepository->findIssues(array('project_id' => 1));
+			$issues = $this->redminerestRepository->findIssues(/*array('project_id' => 1)*/'',29);
 			$this->view->assign('issues', $issues);
 	}
 	
 	protected function pmsprojectsAction() {
 		
-		$projects = $this->redminerestRepository->findProjects('',1);
+		$projects = $this->redminerestRepository->findProjects('');
 		$this->view->assign('projects', $projects);
 	}
 	
@@ -412,7 +411,8 @@ class Tx_SugarMine_Controller_AccountController extends Tx_Extbase_MVC_Controlle
 	 */
 	protected function testAction() {
 		
-		var_dump('hello test action');
+		//var_dump('hello test action');
 	}
 }
 
+?>

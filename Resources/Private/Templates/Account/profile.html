@@ -5,35 +5,34 @@
 		<f:link.action action="cases" controller="Account" ><f:translate key="Cases">Cases</f:translate></f:link.action> |
 		<f:link.action action="projects" controller="Account" ><f:translate key="Projects">Projects</f:translate></f:link.action> |
 		<f:link.action action="issues" controller="Account" ><f:translate key="Issues">Issues</f:translate></f:link.action> |
-		<f:link.action action="pmsprojects" controller="Account" ><f:translate key="pmsProjects">Projects (PMS)</f:translate></f:link.action> |
-		<f:link.action action="logout" controller="Start" ><f:translate key="Logout">Logout</f:translate></f:link.action>
+		<f:link.action action="pmsprojects" controller="Account" ><f:translate key="pmsProjects">Projects (PMS)</f:translate></f:link.action><br /><br />
 		<h2><f:translate key="Welcome">Welcome to our Support Center</f:translate> {contact.fieldRecords.salutation.value} {contact.fieldRecords.first_name.value} {contact.fieldRecords.last_name.value}</h2>
 		<h3><f:translate key="Profile">User profile</f:translate>:</h3>
 
-		<div style="width:800px;"> <!--TODO: style belongs to layouts-->
+		 <!--TODO: style belongs to layouts-->
 		<f:form method="post" controller="Account" action="profile" name="contactForm">
 		<f:form.hidden name="recordId" value="{contact.id}" />
-				<FIELDSET>
-					<LEGEND><b><f:translate key="Contact">Contact</f:translate></b></LEGEND>
+				<div class="box">
+				<fieldset>
 					<f:for each="{contact.fieldRecords}" as="records">
-						<FIELDSET>
+						<fieldset style="margin: 15px 0 0 0;">
 						<f:if condition="{records.fieldset}">
 							<f:then>
-								<LEGEND><f:translate key="{records.legend}">{records.legend}</f:translate></LEGEND>
-								<TABLE>
+								<legend><f:translate key="{records.legend}">{records.legend}:</f:translate></legend>
+								<table>
 									<f:for each="{records.fields}" as="name">
-										<TR>
-											<TD>
-		          								<LABEL><f:translate key="{name.field.label}">{name.field.label}</f:translate></LABEL>
-		        							</TD>
+										<tr>
+											<td>
+		          									<LABEL style="width: 100px;display:block"><f:translate key="{name.field.label}">{name.field.label}</f:translate></LABEL>
+		        								</td>
 											<f:if condition="{name.alter}">
 												<f:then>
 													<f:if condition="{name.field.textBox}">
 														<f:then>
-															<TD>
+															<td>
 																<f:form.textbox value="{name.value}" name="{name.recordName}:{name.field.type.typeName}" />
-																<b style="color:red;">{name.error}</b>
-															</TD>
+																<span style="color:rgb(46,170,220);font-size:9px;">{name.error}</span>
+															</td>
 														</f:then>
 													
 														<f:else>
@@ -43,43 +42,44 @@
 													</f:if>
 												</f:then>
 												<f:else>
-													<TD>
+													<td>
 														{name.value}
-													</TD>
+													</td>
 												</f:else>
 											</f:if>
-										</TR>
+										</tr>
 									</f:for>
-								</TABLE>
+								</table>
 							</f:then>
 							<f:else>
-		          				<LEGEND><f:translate key="{records.field.label}">{records.field.label}</f:translate></LEGEND>
+		          				<legend><f:translate key="{records.field.label}">{records.field.label}</f:translate></legend>
 									<f:if condition="{records.alter}">
 										<f:then>
 											<f:if condition="{records.field.textBox}"> <!-- in this case[s]: use textbox-viewhelper strictly -->
 												<f:then>
 													<f:form.textbox value="{records.value}" name="{records.recordName}:{records.field.type.typeName}" />
-													<b style="color:red;">{records.error}</b>
+													<span style="color:rgb(46,170,220);font-size:9px;">{name.error}</span>
 												</f:then>
 												<f:else>
 													<f:if condition="{records.field.type.enum}"> <!--is condition enum: select-->
 														<f:then>
 															<f:form.select value="{records.value}" name="{records.recordName}:enum" options="{records.field.options}"/>
-															<b style="color:red;">{records.error}</b>
+															<span style="color:rgb(46,170,220);font-size:9px;">{name.error}</span>
 														</f:then>
 														<f:else>
 															<f:if condition="{records.field.type.text}"> <!--is condition text: textarea-->
 																<f:then>
 																	<f:form.textarea value="{records.value}" rows="5" cols="40" name="{records.recordName}:text" />
-																	<b style="color:red;">{records.error}</b>
+																	<span style="color:rgb(46,170,220);font-size:9px;">{name.error}</span>
 																</f:then>
 																<f:else>
 																	<f:if condition="{records.field.type.encrypt}">
 																		<f:then>
 																			<f:form.password name="{records.recordName}:encrypt" /> <!--is condition encrypt: password-->
 																			{records.value}
-																			<b style="color:red;">{records.error}</b>
+																			<span style="color:rgb(46,170,220);font-size:9px;">{name.error}</span>
 																		</f:then>
+																		<f:else></f:else>
 																	</f:if>
 																</f:else>
 															</f:if>
@@ -94,11 +94,11 @@
 									</f:if>					
 							</f:else>
 						</f:if>
-						</FIELDSET>
+						</fieldset>
 					</f:for>
-				</FIELDSET>
+				</fieldset>
+		</div><br />
 		<f:form.submit value="Submit"/><br />
 		</f:form>
-	</div>
 	</f:if>
 </f:section> 
